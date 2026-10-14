@@ -1,0 +1,19 @@
+# StackSight UI rules
+
+The UI source of truth is docs/ui-spec.md. Read it before building or restyling any UI.
+
+- Tailwind v4, CSS-first: tokens and utilities live in app/globals.css (@theme inline, @utility). There is no tailwind.config.ts. Do not add one.
+- Dark is the default theme. Light must stay high-contrast. Use the semantic utilities (bg-background, bg-surface, bg-surface-muted, bg-code, border-border, text-muted). Do not hardcode slate-* values for surfaces.
+- Role colors are semantic. Use them only for their role:
+  - tracer (cyan): active execution
+  - stack (indigo): frames and variables
+  - heap (amber): heap objects, in progress, weak topics
+  - pool (violet): String Pool and static storage
+  - success (emerald): completed
+  - danger (rose): wrong, unreachable
+- Use glow-<role> sparingly: dark-only, live state only.
+- Radius: panes rounded-2xl, cards rounded-xl, buttons rounded-lg. Borders are 1px. No decorative shadows.
+- Code and IDs use font-mono (JetBrains Mono). Module numbers are zero-padded: "01 |".
+- Every drag interaction needs a tap and keyboard alternative. Every icon-only button needs an aria-label.
+- Persisted store state renders only after hydration (useCourseStoreHydrated). Before that, show skeletons.
+- Lesson traces are data in lib/traces.ts. Do not hand-draw memory diagrams.

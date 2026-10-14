@@ -1,26 +1,206 @@
 @import "tailwindcss";
 
+/* Design tokens: see docs/ui-spec.md §2. Tailwind v4 is CSS-first, so there is no tailwind.config.ts. */
+
+/* Class-based dark mode, driven by the theme toggle (see components/layout/theme-toggle.tsx). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f7fb;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --code: #f8fafc;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --muted: #64748b;
+
+  /* Semantic roles, tuned to read as text on --surface. */
+  --tracer: #0e7490;
+  --stack: #4f46e5;
+  --heap: #b45309;
+  --pool: #7e22ce;
+  --success: #047857;
+  --danger: #be123c;
+
+  --accent: var(--stack);
+  --accent-foreground: #ffffff;
+  --accent-soft: #eef2ff;
+
+  /* Text on a solid role fill (bg-heap, bg-success, …): role fills are deep here, so text is light. */
+  --role-foreground: #ffffff;
+  /* Backdrop behind drawers and modals. */
+  --scrim: rgb(2 6 23 / 0.5);
+
+  /* Glows collapse to a plain ring in light mode. */
+  --glow-mix: 0%;
+  --glow-blur: 0px;
+  --scrollbar: #cbd5e1;
+  --grid-dot: rgb(15 23 42 / 0.07);
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0d1117;
+  --foreground: #e2e8f0;
+  --surface: #111826;
+  --surface-muted: #182133;
+  --code: #0a0e15;
+  --border: #1e293b;
+  --border-strong: #334155;
+  --muted: #94a3b8;
+
+  --tracer: #22d3ee;
+  --stack: #818cf8;
+  --heap: #fbbf24;
+  --pool: #c084fc;
+  --success: #34d399;
+  --danger: #fb7185;
+
+  --accent: var(--stack);
+  --accent-foreground: #0d1117;
+  --accent-soft: rgb(129 140 248 / 0.12);
+
+  /* Role fills are neon here, so text on them is dark. */
+  --role-foreground: #020617;
+  --scrim: rgb(2 6 23 / 0.6);
+
+  --glow-mix: 55%;
+  --glow-blur: 18px;
+  --scrollbar: #2a3547;
+  --grid-dot: rgb(148 163 184 / 0.09);
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-code: var(--code);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-role-foreground: var(--role-foreground);
+  --color-scrim: var(--scrim);
+
+  --color-tracer: var(--tracer);
+  --color-stack: var(--stack);
+  --color-heap: var(--heap);
+  --color-pool: var(--pool);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-jetbrains-mono);
+
+  --animate-shake: shake 0.32s ease-in-out;
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* glow-tracer, glow-heap, …: soft neon halo in dark mode, a 1px ring in light mode. */
+@utility glow-* {
+  --glow-color: --value(--color-*);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--glow-color) 45%, transparent),
+    0 0 var(--glow-blur) -2px color-mix(in oklab, var(--glow-color) var(--glow-mix), transparent);
+}
+
+/* SVG counterpart of glow-*. */
+@utility drop-glow-* {
+  --glow-color: --value(--color-*);
+  filter: drop-shadow(0 0 calc(var(--glow-blur) / 4) color-mix(in oklab, var(--glow-color) var(--glow-mix), transparent));
+}
+
+/* Dotted canvas used behind the memory visualizer. */
+@utility bg-dots {
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 30%, transparent);
+  }
+}
+
+@layer components {
+  /* Timeline scrubber (native range input, so keyboard and screen readers work as-is). */
+  .scrubber {
+    appearance: none;
+    height: 1rem;
+    background: transparent;
+    cursor: pointer;
+  }
+  .scrubber::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, var(--tracer) var(--fill, 0%), var(--surface-muted) var(--fill, 0%));
+  }
+  .scrubber::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, var(--tracer) var(--fill, 0%), var(--surface-muted) var(--fill, 0%));
+  }
+  .scrubber::-webkit-slider-thumb {
+    appearance: none;
+    margin-top: -6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--surface);
+    border: 3px solid var(--tracer);
+    box-shadow: 0 0 var(--glow-blur) color-mix(in oklab, var(--tracer) var(--glow-mix), transparent);
+  }
+  .scrubber::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    background: var(--surface);
+    border: 3px solid var(--tracer);
+    box-shadow: 0 0 var(--glow-blur) color-mix(in oklab, var(--tracer) var(--glow-mix), transparent);
+  }
+  .scrubber:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 9999px;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
