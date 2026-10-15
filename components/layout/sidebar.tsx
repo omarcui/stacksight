@@ -1,30 +1,39 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bookmark,
   ChartColumn,
+  Check,
+  ChevronDown,
+  Flame,
   LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
+  Play,
   SquareTerminal,
   Star,
+  Trophy,
   Zap,
   X,
   type LucideIcon,
 } from "lucide-react";
+import { openFlashTrace } from "@/components/flash-trace/FlashTraceModal";
 import { curriculumData } from "@/data/curriculumData";
-import { moduleNumber } from "@/lib/curriculum-utils";
+import { lessonNumber, moduleNumber } from "@/lib/curriculum-utils";
 import { getModuleIcon } from "@/lib/module-icons";
 import { cn } from "@/lib/utils";
 import {
+  useCompletedLessonIds,
   useCourseStore,
   useCourseStoreHydrated,
+  useCurrentLesson,
   useWeakModuleIds,
 } from "@/store/useCourseStore";
+import type { Module } from "@/types/curriculum";
 import { Logo } from "./logo";
 
 type NavItem = {
@@ -57,7 +66,7 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-const EXPANDED_WIDTH = 256;
+const EXPANDED_WIDTH = 280;
 const COLLAPSED_WIDTH = 72;
 
 const spring = { type: "spring", stiffness: 380, damping: 36 } as const;
@@ -82,7 +91,7 @@ export function Sidebar({
         initial={false}
         animate={{ width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH }}
         transition={spring}
-        className="hidden shrink-0 flex-col overflow-hidden border-r border-border bg-surface lg:flex"
+        className="hidden h-full shrink-0 flex-col overflow-hidden border-r border-border bg-surface lg:flex"
         aria-label="Course navigation"
       >
         <SidebarNav variant="desktop" collapsed={collapsed} />
@@ -152,7 +161,7 @@ export function Sidebar({
                 collapsed={false}
                 onNavigate={onMobileClose}
               />
-              <FlashTraceCard />
+              <FlashTraceCard onLaunch={onMobileClose} />
             </motion.aside>
           </>
         )}
@@ -206,7 +215,7 @@ function NavList({
   ];
 
   return (
-    <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3">
+    <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3">
       {sections.map((section, sectionIndex) => (
         <div key={section.title} className={sectionIndex > 0 ? "mt-5" : ""}>
           <div className="mb-1.5 flex h-5 items-center px-[15px]">
@@ -219,19 +228,27 @@ function NavList({
             )}
           </div>
           <ul className="space-y-0.5">
-            {section.items.map((item, i) => (
-              <li key={item.href}>
-                <SidebarLink
-                  item={item}
-                  badge={badges[item.href]}
-                  number={section.numbered ? i + 1 : undefined}
-                  active={pathname !== null && isActivePath(pathname, item.href)}
-                  collapsed={collapsed}
-                  layoutId={`${variant}-sidebar-active`}
-                  onNavigate={onNavigate}
-                />
-              </li>
-            ))}
+            {section.items.map((item, i) => {
+              const active = pathname !== null && isActivePath(pathname, item.href);
+              // The open module expands in place into its unit → lesson outline.
+              const outline = section.numbered && active && !collapsed ? curriculumData[i] : undefined;
+              return (
+                <li key={item.href}>
+                  <SidebarLink
+                    item={item}
+                    badge={badges[item.href]}
+                    number={section.numbered ? i + 1 : undefined}
+                    active={active}
+                    collapsed={collapsed}
+                    layoutId={`${variant}-sidebar-active`}
+                    onNavigate={onNavigate}
+                  />
+                  <AnimatePresence initial={false}>
+                    {outline && <ModuleOutline key={outline.id} mod={outline} onNavigate={onNavigate} />}
+                  </AnimatePresence>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ))}
@@ -311,6 +328,128 @@ function SidebarLink({
   );
 }
 
+const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+
+/**
+ * Unit → lesson tree for the open module (docs/ui-spec.md §3.5). One disclosure per unit;
+ * the unit holding the current lesson is always opened. Selecting a lesson makes it the
+ * store's active lesson, which the reader renders.
+ */
+function ModuleOutline({ mod, onNavigate }: { mod: Module; onNavigate?: () => void }) {
+  const hydrated = useCourseStoreHydrated();
+  const setActiveLesson = useCourseStore((s) => s.setActiveLesson);
+  const completed = useCompletedLessonIds(mod.id);
+  const current = useCurrentLesson(mod);
+  const activeUnitId = current?.unit.id;
+  const activeLessonId = current?.lesson.id;
+
+  const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(activeUnitId ? [activeUnitId] : []));
+
+  // Reveal the unit holding the current lesson whenever it changes (e.g. via Prev/Next).
+  const [lastActiveUnitId, setLastActiveUnitId] = useState(activeUnitId);
+  if (activeUnitId !== lastActiveUnitId) {
+    setLastActiveUnitId(activeUnitId);
+    if (activeUnitId && !open.has(activeUnitId)) setOpen(new Set(open).add(activeUnitId));
+  }
+
+  function toggle(unitId: string) {
+    const next = new Set(open);
+    if (!next.delete(unitId)) next.add(unitId);
+    setOpen(next);
+  }
+
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="overflow-hidden"
+    >
+      <ul aria-label={`${mod.title} outline`} className="ml-6 mt-1 space-y-0.5 border-l border-border pb-1 pl-2">
+        {mod.units.map((unit, ui) => {
+          const isOpen = open.has(unit.id);
+          const unitDone = unit.lessons.filter((l) => completed.has(l.id)).length;
+          const allDone = hydrated && unitDone === unit.lessons.length;
+          const panelId = `sidebar-unit-${unit.id}`;
+          return (
+            <li key={unit.id}>
+              <button
+                type="button"
+                onClick={() => toggle(unit.id)}
+                aria-expanded={isOpen}
+                aria-controls={panelId}
+                className={cn(
+                  "flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-surface-muted",
+                  focusRing,
+                  unit.id === activeUnitId ? "text-foreground" : "text-muted hover:text-foreground",
+                )}
+              >
+                <span className="mt-px font-mono text-[11px] opacity-60">{String(ui + 1).padStart(2, "0")}</span>
+                <span className="min-w-0 flex-1 font-medium leading-snug">{unit.title}</span>
+                <span className={cn("mt-px text-[11px] tabular-nums", allDone ? "text-success" : "text-muted")}>
+                  {hydrated ? `${unitDone}/${unit.lessons.length}` : unit.lessons.length}
+                </span>
+                <ChevronDown
+                  className={cn("mt-0.5 size-3.5 shrink-0 text-muted transition-transform", isOpen && "rotate-180")}
+                  aria-hidden
+                />
+              </button>
+
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.ul
+                    id={panelId}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    {unit.lessons.map((lesson, li) => {
+                      const active = lesson.id === activeLessonId;
+                      const done = completed.has(lesson.id);
+                      return (
+                        <li key={lesson.id} className="py-px pl-4">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveLesson(mod.id, lesson.id);
+                              onNavigate?.();
+                            }}
+                            disabled={!hydrated}
+                            aria-current={active ? "page" : undefined}
+                            className={cn(
+                              "relative flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1 text-left text-[13px] transition-colors disabled:cursor-default",
+                              focusRing,
+                              active
+                                ? "bg-accent-soft font-medium text-accent"
+                                : "text-muted hover:bg-surface-muted hover:text-foreground",
+                            )}
+                          >
+                            {active && (
+                              <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r bg-accent" aria-hidden />
+                            )}
+                            <span className="font-mono text-[11px] opacity-70">
+                              {lessonNumber({ unitIndex: ui, lessonIndex: li })}
+                            </span>
+                            <span className="min-w-0 flex-1 leading-snug">{lesson.title}</span>
+                            {done && <Check className="size-3.5 shrink-0 text-success" aria-label="completed" />}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </li>
+          );
+        })}
+      </ul>
+    </motion.div>
+  );
+}
+
 function FadeLabel({
   show,
   children,
@@ -334,38 +473,81 @@ function FadeLabel({
   );
 }
 
-/** Flash-Trace 2-minute challenge teaser (docs/ui-spec.md §3.1). The game itself is not built yet. */
-function FlashTraceCard() {
+/** Flash-Trace 2-minute challenge launcher (docs/ui-spec.md §3.1, §3.7) with the persisted personal bests. */
+function FlashTraceCard({ onLaunch }: { onLaunch?: () => void }) {
+  const hydrated = useCourseStoreHydrated();
+  const highScore = useCourseStore((s) => s.flashTraceHighScore);
+  const bestStreak = useCourseStore((s) => s.flashTraceBestStreak);
+  const sessions = useCourseStore((s) => s.flashTraceSessionsCount);
+  const played = hydrated && sessions > 0;
   // A fixed pattern for the mini "memory grid" motif.
   const cells = "hshhs-shh-hs-ssh-h--shs-".split("");
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { delay: 0.1 } }}
       exit={{ opacity: 0, transition: { duration: 0.1 } }}
-      className="mx-3 mb-3 shrink-0 rounded-xl border border-border bg-surface-muted/60 p-3"
+      className="mx-3 mb-3 shrink-0"
     >
-      <div className="flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-xs font-semibold">
-          <Zap className="size-3.5 text-heap" aria-hidden />
-          Flash-Trace
-        </p>
-        <span className="rounded-full border border-border px-1.5 text-[10px] font-medium text-muted">
-          Soon
+      <button
+        type="button"
+        onClick={() => {
+          onLaunch?.();
+          openFlashTrace();
+        }}
+        aria-label={
+          played
+            ? `Start Flash-Trace. High score ${highScore}, best streak ${bestStreak}`
+            : "Start Flash-Trace 2-minute challenge"
+        }
+        className={cn(
+          "group block w-full rounded-xl border border-border bg-surface-muted/60 p-3 text-left transition-colors hover:border-heap/50 hover:bg-heap/[0.06]",
+          focusRing,
+        )}
+      >
+        <span className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-xs font-semibold">
+            <Zap className="size-3.5 text-heap" aria-hidden />
+            Flash-Trace
+          </span>
+          <span className="grid size-6 place-items-center rounded-full bg-heap text-role-foreground transition-transform group-hover:scale-110">
+            <Play className="size-3 fill-current" aria-hidden />
+          </span>
         </span>
-      </div>
-      <p className="mt-0.5 text-[11px] text-muted">2-minute pointer challenge</p>
-      <div className="mt-2.5 grid grid-cols-8 gap-1" aria-hidden>
-        {cells.map((c, i) => (
-          <span
-            key={i}
-            className={cn(
-              "aspect-square rounded-[3px]",
-              c === "h" ? "bg-heap/70" : c === "s" ? "bg-stack/60" : "bg-border",
+        <span className="mt-0.5 block text-[11px] text-muted">2-minute logic &amp; memory challenge</span>
+        <span className="relative mt-2.5 block" aria-hidden>
+          <span className="grid grid-cols-8 gap-1">
+            {cells.map((c, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "aspect-square rounded-[3px]",
+                  c === "h" ? "bg-heap/70" : c === "s" ? "bg-stack/60" : "bg-border",
+                )}
+              />
+            ))}
+          </span>
+          <span className="absolute inset-0 flex items-center justify-center gap-1.5">
+            {played ? (
+              <>
+                <span className="inline-flex items-center gap-1 rounded-md bg-surface/90 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-heap ring-1 ring-border">
+                  <Trophy className="size-3" />
+                  {highScore.toLocaleString()}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-surface/90 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-success ring-1 ring-border">
+                  <Flame className="size-3" />
+                  {bestStreak}
+                </span>
+              </>
+            ) : (
+              <span className="rounded-md bg-surface/90 px-1.5 py-0.5 text-[11px] font-semibold text-foreground ring-1 ring-border">
+                {hydrated ? "Set a high score" : "\u00a0"}
+              </span>
             )}
-          />
-        ))}
-      </div>
+          </span>
+        </span>
+      </button>
     </motion.div>
   );
 }

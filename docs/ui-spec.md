@@ -143,9 +143,14 @@ to hide them on horizontal chip rows.
 
 - **Header bar:** logo, route breadcrumbs (md+), then global stats badges: modules complete (links to
   `/progress`), weak topics count (links to `/#weak-topics`), theme toggle. `bg-surface/80 backdrop-blur`.
-- **Left sidebar:** 256px expanded / 72px collapsed rail on `lg+`; off-canvas drawer below `lg`.
+- **Viewport lock:** `html`/`body` never scroll. The shell is a fixed `h-dvh overflow-hidden` column:
+  header `h-14 shrink-0`, then a row of sidebar (`h-full`, its nav scrolls on its own) and `<main>`
+  (`flex-1 h-full overflow-y-auto`). `<main>` is the single page scroll container; pages must not add
+  viewport-height panes with their own vertical scroll (the sandbox IDE is the one exception).
+- **Left sidebar:** 280px expanded / 72px collapsed rail on `lg+`; off-canvas drawer below `lg`.
   Sections: Overview, Quick access (Weak topics, Bookmarks with count badges), Modules (numbered),
-  Tools. The Flash-Trace 2-minute challenge card sits at the bottom when expanded.
+  Tools. The open module expands in place into its unit → lesson outline (see §3.5). The Flash-Trace
+  launcher card (§3.7) sits at the bottom when expanded and in the mobile drawer.
 
 ### 3.2 Dashboard / syllabus roadmap (`app/page.tsx`)
 
@@ -221,28 +226,43 @@ Module card anatomy:
 ### 3.5 Lesson reader (`app/modules/[id]/page.tsx`, `components/reader/`)
 
 ```txt
-┌ Module 01: Arrays & Complexity → 1.2 Indexing & bounds            [✓ Mark complete] [Quiz] ┐
-├──────────────────────┬─────────────────────────────────────────────────────────────────────┤
-│ UNITS        2/8 done│ UNIT 1 · ARRAYS IN JAVA                                    ◷ 8 min  │
-│ 01 Arrays in Java 1/3│   Lesson 1.2                                                        │
-│    1.1 Declaring  ✓  │   Indexing & bounds                    ← text-2xl title             │
-│ ▌  1.2 Indexing      │   description (muted)                                               │
-│    1.3 Multidim…     │   blocks: text · code · callout · formula                           │
-│ 02 Big-O         0/3 │   KEY TAKEAWAYS card                                                │
-│ 03 ArrayList     0/2 │   [← Previous lesson]                    [Next lesson →]            │
-└──────────────────────┴─────────────────────────────────────────────────────────────────────┘
+APP SIDEBAR           MAIN (scrolls)
+ MODULES             ┌ UNIT 1 · ARRAYS IN JAVA  ◷ 8 min        [★] [✓ Mark complete] [Quiz] ┐ ← sticky
+ ▌01 Arrays & …      │   Lesson 1.2                                                          │
+  │ 01 Arrays …  1/3 │   Indexing & bounds                    ← h1, text-2xl                 │
+  │   1.1 Decl…   ✓  │   description (muted)                                                 │
+  │ ▌ 1.2 Index…     │   blocks: text · code · callout · formula                             │
+  │ 02 Big-O     0/3 │   KEY TAKEAWAYS card                                                  │
+  02 Big-O …         │   [← Previous lesson]                    [Next lesson →]              │
+                     └───────────────────────────────────────────────────────────────────────┘
 ```
 
 - **Data:** `getModuleById(curriculumData, …)` from `data/curriculumData.ts` (Module → Unit → Lesson → ContentBlock).
   The active lesson lives in the course store (`activeLessonId`); completion is stored per lesson.
-- **Sidebar:** 18rem pane on `lg+`; one disclosure per unit (`aria-expanded`, mono `01` number,
-  `done/total` meta), the active lesson's unit is always opened. Active lesson: `bg-accent/10` + 3px
-  accent bar. Below `lg` the outline collapses to its header and toggles open.
-- **Lesson pane:** max-w-3xl reading column, internal scroll on `lg+`, scrolled to top on lesson change.
-- **Blocks:** `text` (minimal Markdown), `code` (`bg-code` card, language eyebrow, caption, line numbers,
-  copy button), `formula` (LaTeX subset rendered as HTML, `role="math"`), `callout` (below).
-- **Callout variants:** `rounded-xl border p-4` with icon and eyebrow label, tinted with a role:
-  info → `accent`, tip → `success`, warning → `heap`, error_pitfall → `danger` ("Common pitfall").
+- **No path header:** the module/lesson path is not repeated in the page; the navbar breadcrumb and
+  the sidebar outline already show it.
+- **Outline (in the app sidebar):** the open module's nav item expands into one disclosure per unit
+  (`aria-expanded`, mono `01` number, `done/total` meta); the current lesson's unit is always opened.
+  Active lesson: `bg-accent-soft text-accent` + 3px accent bar; completed lessons show a success check.
+  Below `lg` the same outline is in the off-canvas drawer, which closes on lesson selection.
+- **Lesson pane:** one full-width card. A sticky toolbar (unit eyebrow, minutes, bookmark,
+  *Mark complete*, *Quiz*) sits on top; content is a `max-w-5xl` column. The pane has no internal
+  scroll: `<main>` scrolls and is reset to the top on lesson change.
+- **Reading rhythm:** the reader is the one place that trades density for comfort. Blocks are spaced
+  `space-y-6 md:space-y-8`; `text` blocks render at `text-base md:text-lg leading-relaxed text-foreground/85`
+  (callouts `md:text-base`). Other pages keep the §2.4 `text-sm` body.
+- **Blocks:** `text` (minimal Markdown: paragraphs, `-` and `1.` lists, pipe tables), `code` (`bg-code`
+  editor card: header with file icon + filename (from a leading `Name.java` caption or the `public class`),
+  language pill and copy button; line numbers; caption below the code), `formula` (LaTeX subset rendered as
+  HTML, `role="math"`), `callout` (below), `interactive` (below).
+- **Callout variants:** scaffolding cards, `rounded-xl border p-4 sm:p-5`, a `size-8` tinted icon tile and an
+  eyebrow label, tinted with a role:
+  info → `accent` "Concept Analogy / Mental Model" (Lightbulb), warning → `heap` "Common Pitfall"
+  (TriangleAlert), tip → `success` "Beginner Shortcut" (Target), error_pitfall → `danger` "Execution Secret"
+  (SearchCode).
+- **Interactive widgets:** wrapped in `rounded-2xl border-accent/20 bg-surface-muted/60` with a header row
+  holding an accent *Interactive* pill and a "Hands-on visualizer" eyebrow; the block caption sits under the
+  header as the instruction, then the widget pane.
 - **Block headings:** every block sits under a slim heading row: mono index (`01`), a kind eyebrow
   (Reading, Example, Note, Formula, Try it, Quiz) and a round check button on the right. The check
   calls `markSubtopicComplete`; done blocks show a filled `success` check. Checking the last block completes
@@ -252,7 +272,10 @@ Module card anatomy:
   attempt count) and a primary *Start module quiz* link to `/quizzes/[moduleId]`.
 - **Deliverable card:** below the key takeaways of every lesson in the module, above Prev/Next:
   neutral `rounded-xl border border-border bg-surface-muted/50` (no role tint: it is not a state),
-  eyebrow `Lab N deliverable`, title, description and the submission filename as a mono chip. Content comes from `module.deliverable`; module N maps to Lab N of
+  eyebrow `Lab N deliverable(s)` with an `n files to submit` meta. Each file is its own `bg-surface` assignment
+  card (grid, 2 columns on `md+` when there are several): exercise eyebrow, title, goal (the description without
+  its repeated lab-reference prefix), then a footer with the filename mono chip and the lab-manual reference
+  pill. Content comes from `module.deliverable` (an array); module N maps to Lab N of
   `docs/lab-manual.md`, and filenames must match the files named there.
 - **Prev/Next:** two cards (`rounded-xl`), crossing unit and module boundaries in reading order; a
   cross-module target shows its module number and navigates to that module's route.
@@ -290,6 +313,49 @@ Java Sandbox                                                                  [�
   `h-128`, console `min-h-88`).
 - **Execution:** `lib/sandbox-runner.ts` interprets a Java subset in the browser (no server). Errors are
   printed in `javac`/JVM format so they match what students see locally.
+
+### 3.7 Flash-Trace challenge (`components/flash-trace/`, `app/flash-trace/page.tsx`)
+
+```txt
+┌ ⚡ Flash-Trace  2-minute logic & memory challenge                         [×] ┐
+│ ( 1:42 )  SCORE 1,350  +225                                   [🔥 4] [×1.5]  │  timer ring · score · streak
+│ ┌ #9  What prints?               03 | Primitive Data Types        [medium] ┐ │
+│ │ 1  double r = (double) 7 / 2;                                            │ │  bg-code, highlighted
+│ │ 2  System.out.println(r);                                                │ │
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+│ [1  3.0 ]  [2  3.5 ✓]                                                         │  2×2 options, sm+
+│ [3  3   ]  [4  4.0  ]                                                         │
+│ Correct. The cast applies to 7 before dividing…                    [Next]    │  aria-live feedback
+│ [■ End session]                                                 [⏸ Pause]    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ [1–4] answer  [Space] pause  [Enter] next  [Esc] pause                       │  hotkey footer (sm+)
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Mounting:** one `FlashTraceModal` lives in the app shell; `openFlashTrace()` opens it from anywhere
+  (the sidebar card, `/flash-trace` on arrival). Centered dialog, `max-w-2xl rounded-2xl shadow-2xl`, scrim
+  backdrop, focus trapped and returned to the launcher on close.
+- **Screens:** intro (personal bests + scoring rules + *Start*), play, summary (total score with a heap
+  *New high score* pill, accuracy / correct / best-streak tiles, the modules missed this session linking to
+  their reader).
+- **Timer ring:** 120s SVG ring; `success` above 50% left, `heap` above 20%, `danger` after, pulsing in
+  the last 10s. Its `drop-glow-*` follows the same role.
+- **Scoring:** easy 100 / medium 150 / hard 200; 3 correct in a row ×1.5, 6 in a row ×2; a miss resets the
+  streak. Questions and their options are shuffled per session.
+- **Feedback:** the correct option gets `border-success glow-success` + check; a wrong pick `animate-shake
+  border-danger`; other options dim. The one-line explanation shows for 0.65s (correct) / 1.7s (wrong);
+  Enter or *Next* skips. The clock keeps running during feedback.
+- **Keyboard:** `1`–`4` answer, `Space` start / pause / resume (also while a button has focus), `Enter`
+  next, `Esc` pauses a running game and otherwise closes. Pausing blurs the code.
+- **Persistence:** a finished session with at least one answer calls `saveFlashTraceResult`: high score,
+  best streak, session count, and `weakTopics` (modules missed are flagged; modules answered without a miss
+  are cleared). `useWeakModuleIds` merges these flags with low quiz scores; weak-topic lists show a heap
+  *Trace* pill for them.
+- **Sidebar card:** a full-card button (`hover:border-heap/50`) with a heap play disc; the memory-grid
+  motif carries the high score (heap, trophy) and best streak (success, flame) chips, or *Set a high score*
+  before the first session.
+- **Content:** `data/flashTraceData.ts` (`FlashTraceQuestion` in `types/flash-trace.ts`): 3–5 line snippets,
+  4 options, `topicTag` is the module the question exercises.
 
 ## 4. Component rules
 

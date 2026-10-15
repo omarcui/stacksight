@@ -1,19 +1,41 @@
-import { CircleAlert, Info, Lightbulb, OctagonX, type LucideIcon } from "lucide-react";
+import { Lightbulb, SearchCode, Target, TriangleAlert, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CalloutVariant } from "@/types/curriculum";
 import { Markdown } from "./Markdown";
 
-// Callout variants map onto role colors (docs/ui-spec.md §3.5): info → accent, tip → success,
-// warning → heap, error_pitfall → danger.
+// Callouts are scaffolding cards (docs/ui-spec.md §3.5). Variants map onto role colors:
+// info → accent, tip → success, warning → heap, error_pitfall → danger.
 
-const VARIANTS: Record<CalloutVariant, { label: string; icon: LucideIcon; className: string; tone: string }> = {
-  info: { label: "Note", icon: Info, className: "border-accent/40 bg-accent/[0.06]", tone: "text-accent" },
-  tip: { label: "Tip", icon: Lightbulb, className: "border-success/40 bg-success/[0.06]", tone: "text-success" },
-  warning: { label: "Warning", icon: CircleAlert, className: "border-heap/50 bg-heap/[0.06]", tone: "text-heap" },
+const VARIANTS: Record<
+  CalloutVariant,
+  { label: string; icon: LucideIcon; card: string; tile: string; tone: string }
+> = {
+  info: {
+    label: "Concept Analogy / Mental Model",
+    icon: Lightbulb,
+    card: "border-accent/30 bg-accent/[0.05]",
+    tile: "border-accent/30 bg-accent/10",
+    tone: "text-accent",
+  },
+  warning: {
+    label: "Common Pitfall",
+    icon: TriangleAlert,
+    card: "border-heap/40 bg-heap/[0.05]",
+    tile: "border-heap/40 bg-heap/10",
+    tone: "text-heap",
+  },
+  tip: {
+    label: "Beginner Shortcut",
+    icon: Target,
+    card: "border-success/30 bg-success/[0.05]",
+    tile: "border-success/30 bg-success/10",
+    tone: "text-success",
+  },
   error_pitfall: {
-    label: "Common pitfall",
-    icon: OctagonX,
-    className: "border-danger/40 bg-danger/[0.06]",
+    label: "Execution Secret",
+    icon: SearchCode,
+    card: "border-danger/30 bg-danger/[0.05]",
+    tile: "border-danger/30 bg-danger/10",
     tone: "text-danger",
   },
 };
@@ -33,13 +55,15 @@ export function CalloutBox({
   return (
     <aside
       role={variant === "error_pitfall" || variant === "warning" ? "alert" : "note"}
-      className={cn("flex gap-3 rounded-xl border p-4", v.className)}
+      className={cn("rounded-xl border p-4 sm:p-5", v.card)}
     >
-      <Icon className={cn("mt-0.5 size-4 shrink-0", v.tone)} aria-hidden />
-      <div className="min-w-0 space-y-1">
+      <div className="flex items-center gap-3">
+        <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg border", v.tile)}>
+          <Icon className={cn("size-4", v.tone)} aria-hidden />
+        </span>
         <p className={cn("text-[11px] font-semibold uppercase tracking-wider", v.tone)}>{title ?? v.label}</p>
-        <Markdown text={children} />
       </div>
+      <Markdown text={children} className="mt-3 text-foreground/90 md:text-base sm:pl-11" />
     </aside>
   );
 }

@@ -1,100 +1,81 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, ClipboardCheck, Clock } from "lucide-react";
-import { flattenLessons, getDeliverables, lessonNumber, moduleNumber, type LessonLocation } from "@/lib/curriculum-utils";
+import { Check, ClipboardCheck, Clock } from "lucide-react";
+import { getDeliverables, lessonNumber, moduleNumber, type LessonLocation } from "@/lib/curriculum-utils";
 import { cn } from "@/lib/utils";
-import { subtopicKey, useCourseStore, useCourseStoreHydrated } from "@/store/useCourseStore";
+import {
+  subtopicKey,
+  useCompletedLessonIds,
+  useCourseStore,
+  useCourseStoreHydrated,
+  useCurrentLesson,
+} from "@/store/useCourseStore";
 import type { ContentBlock, ContentType, Module, ModuleId } from "@/types/curriculum";
 import { BookmarkToggle } from "./BookmarkToggle";
 import { ContentBlockRenderer } from "./ContentBlockRenderer";
 import { DeliverableCard } from "./DeliverableCard";
 import { LessonNav } from "./LessonNav";
-import { UnitAccordion } from "./UnitAccordion";
 
-// Lesson reader: unit accordion beside the active lesson pane (docs/ui-spec.md §3.5).
+// Lesson reader: full-width lesson pane; the unit/lesson outline lives in the app sidebar (docs/ui-spec.md §3.5).
 
 const EMPTY: string[] = [];
 
-const paneHeaderClass = "flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border px-4";
 const eyebrowClass = "text-[11px] font-semibold uppercase tracking-wider text-muted";
 const secondaryButton =
   "inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-medium transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-default disabled:opacity-60";
 
 export function ModuleReader({ mod }: { mod: Module }) {
-  const hydrated = useCourseStoreHydrated();
-  const activeModuleId = useCourseStore((s) => s.activeModuleId);
-  const activeLessonId = useCourseStore((s) => s.activeLessonId);
-  const setActiveLesson = useCourseStore((s) => s.setActiveLesson);
-  const completedIds = useCourseStore((s) => s.progress[mod.id]?.completedLessons ?? EMPTY);
-  const completed = useMemo(() => new Set(hydrated ? completedIds : EMPTY), [hydrated, completedIds]);
-
-  const locations = useMemo(() => flattenLessons([mod]), [mod]);
-
   // The store owns the selected lesson so sidebar and dashboard links can open one directly.
-  const remembered =
-    hydrated && activeModuleId === mod.id ? locations.find((l) => l.lesson.id === activeLessonId) : undefined;
-  const current = remembered ?? locations[0];
+  const current = useCurrentLesson(mod);
+  const completed = useCompletedLessonIds(mod.id);
 
   if (!current) {
     return <p className="p-6 text-sm text-muted">This module has no lessons yet.</p>;
   }
 
   return (
-    <div className="flex flex-col gap-3 px-3 pb-6 pt-4 sm:px-4 lg:h-[calc(100dvh-3.5rem)] lg:pb-4">
-      <ReaderHeader moduleId={mod.id} moduleTitle={mod.title} location={current} done={completed.has(current.lesson.id)} />
-
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <UnitAccordion
-          mod={mod}
-          activeUnitId={current.unit.id}
-          activeLessonId={current.lesson.id}
-          completed={completed}
-          ready={hydrated}
-          onSelect={(lessonId) => setActiveLesson(mod.id, lessonId)}
-        />
-        <LessonPane mod={mod} location={current} />
-      </div>
+    <div className="px-3 pb-6 pt-4 sm:px-4 lg:pb-8">
+      <LessonPane mod={mod} location={current} done={completed.has(current.lesson.id)} />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Header: breadcrumb + actions
+// Toolbar: unit context + actions (the module/lesson path is in the navbar breadcrumb and sidebar)
 // ---------------------------------------------------------------------------
 
-function ReaderHeader({
+function ReaderToolbar({
   moduleId,
-  moduleTitle,
   location,
   done,
 }: {
   moduleId: ModuleId;
-  moduleTitle: string;
   location: LessonLocation;
   done: boolean;
 }) {
   const hydrated = useCourseStoreHydrated();
   const markLessonComplete = useCourseStore((s) => s.markLessonComplete);
+  const { unit, lesson, unitIndex } = location;
 
   return (
-    <header className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <h1 className="flex min-w-0 flex-col gap-0.5 text-base sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:text-lg">
-        <span className="text-muted">
-          Module {moduleNumber(moduleId)}: {moduleTitle}
+    <div className="sticky top-0 z-10 flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-t-2xl border-b border-border bg-surface/90 px-4 py-2.5 backdrop-blur-md">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className={cn(eyebrowClass, "truncate")}>
+          Unit {unitIndex + 1} · {unit.title}
         </span>
-        <ArrowRight className="hidden size-4 shrink-0 text-muted sm:block" aria-hidden />
-        <span className="font-semibold">
-          <span className="font-mono">{lessonNumber(location)}</span> {location.lesson.title}
+        <span className="flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted">
+          <Clock className="size-3.5" aria-hidden />
+          {lesson.estimatedMinutes} min
         </span>
-      </h1>
+      </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
-        <BookmarkToggle moduleId={moduleId} lessonId={location.lesson.id} />
+      <div className="flex shrink-0 items-center gap-2">
+        <BookmarkToggle moduleId={moduleId} lessonId={lesson.id} />
         <button
           type="button"
-          onClick={() => markLessonComplete(moduleId, location.lesson.id)}
+          onClick={() => markLessonComplete(moduleId, lesson.id)}
           disabled={!hydrated || done}
           className={cn(secondaryButton, done && "border-success/40 bg-success/10 text-success disabled:opacity-100")}
         >
@@ -109,7 +90,7 @@ function ReaderHeader({
           Quiz
         </Link>
       </div>
-    </header>
+    </div>
   );
 }
 
@@ -117,44 +98,33 @@ function ReaderHeader({
 // Active lesson pane
 // ---------------------------------------------------------------------------
 
-function LessonPane({ mod, location }: { mod: Module; location: LessonLocation }) {
-  const { unit, lesson, unitIndex } = location;
-  const scrollRef = useRef<HTMLDivElement>(null);
+function LessonPane({ mod, location, done }: { mod: Module; location: LessonLocation; done: boolean }) {
+  const { lesson } = location;
   const hydrated = useCourseStoreHydrated();
   const markSubtopicComplete = useCourseStore((s) => s.markSubtopicComplete);
   const subtopicIds = useCourseStore((s) => s.progress[mod.id]?.completedSubtopics ?? EMPTY);
   const doneSubtopics = useMemo(() => new Set(hydrated ? subtopicIds : EMPTY), [hydrated, subtopicIds]);
 
+  // <main> is the only scroll container (components/layout/app-shell.tsx); start each lesson at the top.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
+    document.getElementById("main-content")?.scrollTo({ top: 0 });
   }, [lesson.id]);
 
   return (
-    <article
-      aria-labelledby="lesson-title"
-      className="flex min-h-0 flex-col rounded-2xl border border-border bg-surface"
-    >
-      <div className={paneHeaderClass}>
-        <span className={cn(eyebrowClass, "truncate")}>
-          Unit {unitIndex + 1} · {unit.title}
-        </span>
-        <span className="flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted">
-          <Clock className="size-3.5" aria-hidden />
-          {lesson.estimatedMinutes} min
-        </span>
-      </div>
+    <article aria-labelledby="lesson-title" className="rounded-2xl border border-border bg-surface">
+      <ReaderToolbar moduleId={mod.id} location={location} done={done} />
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-8">
-          <header className="space-y-1.5">
-            <p className="font-mono text-[11px] text-muted">Lesson {lessonNumber(location)}</p>
-            <h2 id="lesson-title" className="text-2xl font-semibold tracking-tight">
+      <div className="px-4 py-8 sm:px-8 md:py-10 lg:px-12">
+        <div className="mx-auto max-w-5xl space-y-8 md:space-y-10">
+          <header className="space-y-2 border-b border-border pb-6 md:pb-8">
+            <p className="font-mono text-xs text-muted">Lesson {lessonNumber(location)}</p>
+            <h1 id="lesson-title" className="text-2xl font-semibold tracking-tight sm:text-3xl">
               {lesson.title}
-            </h2>
-            <p className="text-sm leading-relaxed text-muted">{lesson.description}</p>
+            </h1>
+            <p className="max-w-3xl text-base leading-relaxed text-muted md:text-lg">{lesson.description}</p>
           </header>
 
-          <div className="space-y-6">
+          <div className="space-y-6 md:space-y-8">
             {lesson.blocks.map((block, i) => (
               <BlockSection
                 key={block.id}
@@ -170,14 +140,14 @@ function LessonPane({ mod, location }: { mod: Module; location: LessonLocation }
           </div>
 
           {lesson.keyTakeaways.length > 0 && (
-            <section aria-labelledby="takeaways-heading" className="rounded-xl border border-border bg-surface-muted/50 p-4">
+            <section aria-labelledby="takeaways-heading" className="rounded-xl border border-border bg-surface-muted/50 p-5">
               <h3 id="takeaways-heading" className={eyebrowClass}>
                 Key takeaways
               </h3>
-              <ul className="mt-2 space-y-1.5 text-sm leading-relaxed">
+              <ul className="mt-3 space-y-2.5 text-sm leading-relaxed text-foreground/90 md:text-base">
                 {lesson.keyTakeaways.map((t) => (
-                  <li key={t} className="flex gap-2">
-                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted" aria-hidden />
+                  <li key={t} className="flex gap-3">
+                    <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-muted" aria-hidden />
                     {t}
                   </li>
                 ))}
@@ -228,7 +198,7 @@ function BlockSection({
   const kind = BLOCK_KINDS[block.type];
 
   return (
-    <section aria-labelledby={headingId} className="space-y-2">
+    <section aria-labelledby={headingId} className="scroll-mt-20 space-y-3">
       <div className="flex items-center gap-2">
         <h3 id={headingId} className={cn(eyebrowClass, "flex items-center gap-2", done && "text-success")}>
           <span className="font-mono">{number}</span>

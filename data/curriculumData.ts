@@ -24,6 +24,17 @@ export const curriculumData: Module[] = [
             estimatedMinutes: 10,
             blocks: [
               {
+                id: "kitchen-analogy",
+                type: "text",
+                text: "**Start with a kitchen.** Before the technical names, picture how a restaurant turns a recipe into a meal:\n\n- **JDK = the tools and the recipe book.** Knives, measuring cups and the book you write new recipes in. You need it to *create* dishes.\n- **JRE = the kitchen.** The stove, the fridge and the pantry of ingredients. Any kitchen can *cook* a recipe it is handed, even without the recipe-writing tools.\n- **JVM = the chef.** The person standing in the kitchen who reads each instruction and carries it out, one step at a time.\n\nYour Java program is the recipe. The rest of this lesson swaps the analogy for the real terms.",
+              },
+              {
+                id: "kitchen-callout",
+                type: "callout",
+                variant: "tip",
+                text: "A chef can follow a recipe someone else wrote without owning the recipe book. In the same way, you can **run** a Java program with only a JRE, but you need the JDK to **write and compile** one.",
+              },
+              {
                 id: "intro",
                 type: "text",
                 text: "Java is **compiled once** to platform-neutral *bytecode*, then **interpreted or JIT-compiled** by a JVM on each machine. This is the basis of *write once, run anywhere*.",
@@ -38,6 +49,12 @@ export const curriculumData: Module[] = [
                 type: "callout",
                 variant: "info",
                 text: "Think of them as nested boxes: **JDK ⊃ JRE ⊃ JVM**.",
+              },
+              {
+                id: "jvm-arch-guide",
+                type: "callout",
+                variant: "info",
+                text: "**🎮 Hands-On Experiment:** You are testing the nested-boxes model of the kitchen. Open each layer and check what it adds on top of the one inside it: the JVM (chef), the JRE (kitchen) and the JDK (tools and recipe book).",
               },
               {
                 id: "jvm-arch",
@@ -89,6 +106,12 @@ export const curriculumData: Module[] = [
                 caption: "Compile, then run (note: no .class extension when running)",
                 code: `javac Welcome.java   # produces Welcome.class
 java Welcome         # runs the bytecode on the JVM`,
+              },
+              {
+                id: "execution-lifecycle-guide",
+                type: "callout",
+                variant: "info",
+                text: "**🎮 Hands-On Experiment:** You are testing the pipeline model: source becomes bytecode, and bytecode becomes running output. Before each step, predict which file exists and what the terminal will show, then advance and check.",
               },
               {
                 id: "execution-lifecycle",
@@ -144,10 +167,22 @@ double d = Math.sqrt(dx * dx + dy * dy);
 double cube = Math.pow(2, 3); // 8.0`,
               },
               {
+                id: "flowchart-runner-guide",
+                type: "callout",
+                variant: "info",
+                text: "**🎮 Hands-On Experiment:** You are testing whether you can \"be the computer\". Follow the arrows one box at a time and keep each variable's value in your head before the widget reveals it.",
+              },
+              {
                 id: "flowchart-runner",
                 type: "interactive",
                 interactiveWidgetId: "flowchart-runner",
                 caption: "Trace the Lab 2 flowcharts step by step: the x^y loop (Exercise 2.2) and Euclidean distance (Exercise 2.1, try (0, 0) to (3, 4) for 5.0).",
+              },
+              {
+                id: "exponential-eval-guide",
+                type: "callout",
+                variant: "info",
+                text: "**🎮 Hands-On Experiment:** You are testing the idea that x^y is just y repeated multiplications. Watch the running product grow, then compare it with `Math.pow` and see why `^` gives a completely different answer.",
               },
               {
                 id: "exponential-eval",
@@ -171,12 +206,15 @@ double cube = Math.pow(2, 3); // 8.0`,
         ],
       },
     ],
-    deliverable: {
-      title: "Welcome Program",
-      description:
-        "Lab 1, Exercise 1.2: write a Welcome class that prints three distinct statements, compile it with javac Welcome.java and run it with java Welcome.",
-      filename: "Welcome.java",
-    },
+    deliverable: [
+      {
+        title: "Welcome Program",
+        description:
+          "Lab 1, Exercise 1.2: write a Welcome class that prints three distinct statements, compile it with javac Welcome.java and run it with java Welcome.",
+        filename: "Welcome.java",
+        labReference: "Lab 1, Exercise 1.2",
+      },
+    ],
   },
 
   // -------------------------------------------------------------------------
@@ -202,14 +240,20 @@ double cube = Math.pow(2, 3); // 8.0`,
             estimatedMinutes: 10,
             blocks: [
               {
+                id: "grammar-analogy",
+                type: "text",
+                text: "**Code has grammar, just like English.** A sentence follows rules about word types and punctuation, and so does every Java statement:\n\n- **Keywords are verbs.** Reserved words such as `public`, `class` and `void` tell the compiler what kind of action or structure comes next, and their meaning never changes.\n- **Identifiers are nouns.** Names you choose, such as `Welcome` or `args`, label the things your program talks about.\n- **Semicolons are periods.** A `;` ends one complete statement, the way `.` ends a sentence.\n- **Braces are paragraphs.** `{ }` group related statements into one block.\n\nThe compiler is a strict grammar teacher: one missing \"period\" and it refuses to read any further.",
+              },
+              {
                 id: "main",
                 type: "code",
                 language: "java",
-                code: `public class ComputeArea {
+                caption: "Welcome.java (Lab 1, Exercise 1.2)",
+                code: `public class Welcome {
     public static void main(String[] args) {
-        double radius = 20;
-        double area = radius * radius * Math.PI;
-        System.out.println("Area: " + area);
+        System.out.println("Welcome to CSC103 Programming Fundamentals!");
+        System.out.println("Java Virtual Machine (JVM) executes bytecode.");
+        System.out.println("Compiling with javac...");
     }
 }`,
               },
@@ -217,6 +261,12 @@ double cube = Math.pow(2, 3); // 8.0`,
                 id: "signature",
                 type: "text",
                 text: "- `public` — visible to the JVM.\n- `static` — runs without creating an object.\n- `void` — returns nothing.\n- `String[] args` — command-line arguments.\n\nStatements end with `;` and blocks are delimited by `{ }`.",
+              },
+              {
+                id: "code-anatomy-guide",
+                type: "callout",
+                variant: "info",
+                text: "**🎮 Hands-On Experiment:** You are testing the grammar analogy. Click each part of `Welcome.java` and name its role before reading the rule: the noun (class name), the sentence structure (main header), the paragraphs (braces) and the periods (semicolons).",
               },
               {
                 id: "code-anatomy",
@@ -246,7 +296,7 @@ double cube = Math.pow(2, 3); // 8.0`,
               {
                 id: "kinds",
                 type: "text",
-                text: "| Token | Examples |\n|---|---|\n| Keyword | `class`, `int`, `if`, `return` |\n| Identifier | `radius`, `ComputeArea` |\n| Literal | `20`, `3.14`, `'A'`, `\"hi\"`, `true` |\n| Operator | `+`, `=`, `==`, `&&` |\n| Separator | `;`, `,`, `( )`, `{ }`, `[ ]` |",
+                text: "| Token | Examples |\n|---|---|\n| Keyword | `class`, `int`, `if`, `return` |\n| Identifier | `radius`, `Welcome` |\n| Literal | `20`, `3.14`, `'A'`, `\"hi\"`, `true` |\n| Operator | `+`, `=`, `==`, `&&` |\n| Separator | `;`, `,`, `( )`, `{ }`, `[ ]` |",
               },
               {
                 id: "identifiers",
@@ -315,6 +365,12 @@ double correct       = 9.0 / 5;    // 1.8`,
                 text: "Logic errors are the hardest to find because nothing fails. Test with inputs whose answers you already know.",
               },
               {
+                id: "syntax-fixer-guide",
+                type: "callout",
+                variant: "info",
+                text: "**🎮 Hands-On Experiment:** You are testing the three-error model. For each bug, first decide *when* it would surface (compile time, run time, or never, giving a wrong answer), then fix it.",
+              },
+              {
                 id: "syntax-fixer",
                 type: "interactive",
                 interactiveWidgetId: "syntax-fixer",
@@ -336,12 +392,15 @@ double correct       = 9.0 / 5;    // 1.8`,
         ],
       },
     ],
-    deliverable: {
-      title: "Distance Calculator",
-      description:
-        "Lab 2: compute the Euclidean distance between (x1, y1) and (x2, y2) with Math.sqrt, printing Distance = 5.0 for (0, 0) and (3, 4), then compute x^y with Math.pow (2.0 raised to 10.0 = 1024.0). Document one syntax, runtime and logic error in comments.",
-      filename: "DistanceCalculator.java",
-    },
+    deliverable: [
+      {
+        title: "Distance Calculator",
+        description:
+          "Lab 2: compute the Euclidean distance between (x1, y1) and (x2, y2) with Math.sqrt, printing Distance = 5.0 for (0, 0) and (3, 4), then compute x^y with Math.pow (2.0 raised to 10.0 = 1024.0). Document one syntax, runtime and logic error in comments.",
+        filename: "DistanceCalculator.java",
+        labReference: "Lab 2, Exercises 2.1–2.2",
+      },
+    ],
   },
 
   // -------------------------------------------------------------------------
@@ -367,6 +426,11 @@ double correct       = 9.0 / 5;    // 1.8`,
             estimatedMinutes: 12,
             blocks: [
               {
+                id: "boxes-analogy",
+                type: "text",
+                text: "**Think of a variable as a labeled storage box.** The label is the variable's name, and the box's type decides how big it is and what fits inside:\n\n- `byte` is a **small pillbox**: 8 bits, holding only whole numbers from −128 to 127.\n- `int` is a **shoebox**: the everyday size for counting, roughly ±2.1 billion.\n- `long` is a **moving crate**: twice the space of an `int` for very large whole numbers.\n- `double` is a **high-precision container**: it holds decimals like `3.14159` to about 15 significant digits.\n- `boolean` is a **light switch**: only `true` or `false`.\n\nPick a box too small and the value will not fit (overflow). Pick one far too big and you waste memory. The table below gives the exact sizes.",
+              },
+              {
                 id: "table",
                 type: "text",
                 text: "| Type | Size | Range / precision |\n|---|---|---|\n| `byte` | 8 bits | −128 to 127 |\n| `short` | 16 bits | −32,768 to 32,767 |\n| `int` | 32 bits | about ±2.1 × 10⁹ |\n| `long` | 64 bits | about ±9.2 × 10¹⁸ |\n| `float` | 32 bits | ~7 decimal digits |\n| `double` | 64 bits | ~15 decimal digits |\n| `char` | 16 bits | Unicode `\\u0000`–`\\uFFFF` |\n| `boolean` | — | `true` / `false` |",
@@ -388,10 +452,28 @@ float ratio = 0.75f;               // f suffix required
 double pi = 3.14159;`,
               },
               {
+                id: "primitive-memory-guide",
+                type: "callout",
+                variant: "info",
+                text: "**🎮 Hands-On Experiment:** You are testing the storage-box model. Compare the pillbox (`byte`) with the high-precision container (`double`) and see how each extra bit roughly doubles what a box can hold.",
+              },
+              {
                 id: "primitive-memory",
                 type: "interactive",
                 interactiveWidgetId: "primitive-memory",
                 caption: "Compare how many bytes each primitive occupies and the range those bits can hold.",
+              },
+              {
+                id: "stack-tracker-guide",
+                type: "callout",
+                variant: "info",
+                text: "**🎮 Hands-On Experiment:** You are testing where the boxes live. Each local variable gets a numbered shelf in `main()`'s stack frame. Predict how many shelves each declaration takes before you step forward.",
+              },
+              {
+                id: "stack-tracker",
+                type: "interactive",
+                interactiveWidgetId: "stack-tracker",
+                caption: "Step through main() as each primitive takes its slot in the stack frame: an int or char fills one slot, a long takes two. The hex and binary literals are explained in the next lesson.",
               },
               {
                 id: "overflow",
@@ -432,12 +514,6 @@ System.out.println(dec == bin && bin == oct && oct == hex); // true`,
                 type: "callout",
                 variant: "error_pitfall",
                 text: "A leading zero makes a literal octal: `int x = 010;` stores **8**, not 10.",
-              },
-              {
-                id: "stack-tracker",
-                type: "interactive",
-                interactiveWidgetId: "stack-tracker",
-                caption: "Watch hex, binary and Unicode literals land in main()'s stack frame, and see a long take two slots.",
               },
               {
                 id: "quiz",
@@ -489,6 +565,12 @@ double avg = (double) 7 / 2; // 3.5`,
                 text: "Casting to `int` truncates toward zero. Use `Math.round()` when you want rounding.",
               },
               {
+                id: "type-casting-guide",
+                type: "callout",
+                variant: "info",
+                text: "**🎮 Hands-On Experiment:** You are testing what happens when you pour one box into another. Pouring a small box into a big one (widening) is always safe, but forcing a big value into a small box (narrowing) spills data. Predict each result before you evaluate it.",
+              },
+              {
                 id: "type-casting",
                 type: "interactive",
                 interactiveWidgetId: "type-casting",
@@ -510,12 +592,15 @@ double avg = (double) 7 / 2; // 3.5`,
         ],
       },
     ],
-    deliverable: {
-      title: "Type Casting Demo",
-      description:
-        "Lab 3, Exercise 3.1: demonstrate explicit narrowing casts and print each result: (int) 7.99 truncates to 7 and (byte) 130 overflows to -126.",
-      filename: "TypeCastingDemo.java",
-    },
+    deliverable: [
+      {
+        title: "Type Casting Demo",
+        description:
+          "Lab 3, Exercise 3.1: demonstrate explicit narrowing casts and print each result: (int) 7.99 truncates to 7 and (byte) 130 overflows to -126.",
+        filename: "TypeCastingDemo.java",
+        labReference: "Lab 3, Exercise 3.1",
+      },
+    ],
   },
 
   // -------------------------------------------------------------------------
@@ -572,6 +657,47 @@ public class ReadInput {
                 variant: "error_pitfall",
                 text: "`nextInt()` leaves the newline in the buffer. A following `nextLine()` returns an empty string unless you consume it first.",
               },
+              {
+                id: "buffer-model",
+                type: "text",
+                text: "**Mental model: the Scanner input buffer.** When you press Enter, the keyboard doesn't hand Java a number. It drops every character you typed, *including the Enter key itself* (`\\n`), into a queue called the **input buffer**. Each Scanner method takes characters from the front of that queue:\n\n- **Token methods** (`nextInt()`, `nextDouble()`, `next()`) skip leading whitespace, take one token, and **stop just before** the whitespace that follows it. They never take that trailing `\\n`.\n- **`nextLine()`** takes everything up to and including the next `\\n`, then returns it *without* the `\\n`.\n\nSo if `\\n` is the first thing left in the queue, `nextLine()` finds the end of a line straight away and returns `\"\"`.",
+              },
+              {
+                id: "buffer-diagram",
+                type: "code",
+                language: "text",
+                caption: "Tracing the buffer when the user types 21⏎ and then Ada Lovelace⏎",
+                code: String.raw`User types: 21⏎
+
+  buffer:  [ 2 | 1 | \n ]
+             └─────┘
+  int age = input.nextInt();      // takes "21", stops before \n
+  buffer:  [ \n ]                 // the newline is still waiting
+
+-- Without a fix ---------------------------------------------
+  String name = input.nextLine(); // takes "" up to the \n
+  buffer:  [ ]                    // name == "" and the prompt is skipped
+
+-- With the fix ----------------------------------------------
+  input.nextLine();               // throw away the leftover \n
+  buffer:  [ ]
+User types: Ada Lovelace⏎
+  buffer:  [ A | d | a |   | L | ... | e | \n ]
+  String name = input.nextLine(); // takes "Ada Lovelace" and the \n
+  buffer:  [ ]                    // clean`,
+              },
+              {
+                id: "buffer-tip",
+                type: "callout",
+                variant: "tip",
+                text: "Rule of thumb: after any `nextInt()`, `nextDouble()` or `next()`, if the **next** read is `nextLine()`, add one bare `input.nextLine();` first to clear the leftover `\\n`.",
+              },
+              {
+                id: "quiz",
+                type: "quiz_preview",
+                quizType: "output_prediction",
+                text: "The user types `7⏎` then `Sam⏎`. The program calls `int n = input.nextInt();` and then `String s = input.nextLine();` with no fix in between. What is the value of `s`, and is the user ever asked to type `Sam`?",
+              },
             ],
             keyTakeaways: [
               "Import java.util.Scanner and wrap System.in.",
@@ -606,6 +732,12 @@ double price = 4.5;
 int qty = 3;
 System.out.printf("%-10s%5d%10.2f%n", item, qty, price * qty);
 // Coffee        3     13.50`,
+              },
+              {
+                id: "printf-builder-guide",
+                type: "callout",
+                variant: "tip",
+                text: "🎮 **Hands-On Experiment:** In the builder below, choose conversion `f`, argument type `double` and the value `3.14159`. Drag the width slider to *none* and set precision to *none*, which gives plain `%f`. Then change it one step at a time:\n\n1. Set precision to `.2` → `%.2f`. How many digits stay after the point? Was the value rounded or cut off?\n2. Drag width to `10` → `%10.2f`. Count the spaces padded on the left.\n3. Turn on the `-` flag → `%-10.2f`. Which side do the spaces move to?\n4. Switch the conversion to `d` but keep the `double` argument. Read the exception Java throws.\n\nBefore each change, predict the output, then check it.",
               },
               {
                 id: "printf-builder",
@@ -666,12 +798,22 @@ System.out.println("She said \"Hello\"");`,
         ],
       },
     ],
-    deliverable: {
-      title: "Circle Area Calculator",
-      description:
-        "Lab 4, Exercise 4.1: read a radius with Scanner and print the radius and area with printf(\"%10.2f\"). Then extend it into ReceiptPrinter.java (Exercise 4.2), an item receipt aligned with \\t, \\n and %12s.",
-      filename: "CircleAreaCalculator.java",
-    },
+    deliverable: [
+      {
+        title: "Circle Area Calculator",
+        description:
+          "Lab 4, Exercise 4.1: read a radius with Scanner and print the radius and area with printf(\"%10.2f\").",
+        filename: "CircleAreaCalculator.java",
+        labReference: "Lab 4, Exercise 4.1",
+      },
+      {
+        title: "Receipt Printer",
+        description:
+          "Lab 4, Exercise 4.2: print an item receipt whose columns line up using \\t, \\n and %12s.",
+        filename: "ReceiptPrinter.java",
+        labReference: "Lab 4, Exercise 4.2",
+      },
+    ],
   },
 
   // -------------------------------------------------------------------------
@@ -713,6 +855,58 @@ System.out.println("She said \"Hello\"");`,
                 variant: "warning",
                 text: "Avoid `==` on doubles: `0.1 + 0.2 == 0.3` is `false`. Compare with a tolerance: `Math.abs(a - b) < 1e-9`.",
               },
+              {
+                id: "relational-demo-intro",
+                type: "text",
+                text: "Every relational operator asks a yes/no question and answers with a `boolean`. You can store that answer in a variable, print it, or use it directly as an `if` condition. The program below tries all six operators on integers. It then shows why doubles need a **tolerance check** instead of `==`.",
+              },
+              {
+                id: "relational-demo",
+                type: "code",
+                language: "java",
+                caption: "RelationalDemo.java: integer comparisons and a floating-point tolerance check",
+                code: `public class RelationalDemo {
+    public static void main(String[] args) {
+        int a = 7, b = 10;
+
+        // Each comparison evaluates to true or false
+        System.out.println("a <  b : " + (a < b));   // true
+        System.out.println("a <= b : " + (a <= b));  // true
+        System.out.println("a >  b : " + (a > b));   // false
+        System.out.println("a >= b : " + (a >= b));  // false
+        System.out.println("a == b : " + (a == b));  // false
+        System.out.println("a != b : " + (a != b));  // true
+
+        // A comparison result can be stored like any other value
+        boolean isPassing = b >= 10;
+        System.out.println("isPassing: " + isPassing); // true
+
+        // Floating-point values are stored in binary, so 0.1 and 0.2
+        // are tiny approximations. Their sum is not exactly 0.3.
+        double x = 0.1 + 0.2;
+        double y = 0.3;
+        System.out.println("x       : " + x);        // 0.30000000000000004
+        System.out.println("x == y  : " + (x == y)); // false (surprise!)
+
+        // Correct approach: "close enough" within a tolerance (epsilon)
+        final double EPSILON = 1e-9;
+        boolean closeEnough = Math.abs(x - y) < EPSILON;
+        System.out.println("|x - y| < 1e-9 : " + closeEnough); // true
+    }
+}`,
+              },
+              {
+                id: "tolerance-formula",
+                type: "formula",
+                latex: String.raw`|a - b| < \varepsilon \quad\text{where}\quad \varepsilon = 10^{-9}`,
+                caption: "Two doubles count as equal when their distance is smaller than a chosen tolerance ε",
+              },
+              {
+                id: "tolerance-why",
+                type: "callout",
+                variant: "info",
+                text: "`Math.abs` matters because you don't know which value is larger. Without it, `x - y` could be a large negative number, which is still `< 1e-9`, so very different values would pass the check.",
+              },
             ],
             keyTakeaways: [
               "Relational operators always yield a boolean.",
@@ -726,6 +920,24 @@ System.out.println("She said \"Hello\"");`,
             description: "Build multi-way decisions and understand how else binds.",
             estimatedMinutes: 12,
             blocks: [
+              {
+                id: "railroad-analogy",
+                type: "text",
+                text: "**Analogy: railroad track switches.** Think of your program as a train moving down a track. Each `if` is a **track switch** with a sign that asks a yes/no question:\n\n- If the answer is **true**, the switch sends the train onto that branch. The train runs that block and then **rejoins the main line**. It never comes back to try the other switches.\n- If the answer is **false**, the train passes by and reaches the next switch, the next `else if`.\n- The final `else` is the **catch-all siding**. Any train that every switch turned away ends up there.\n\nA train can only be on **one** track at a time, so exactly one branch of an `if-else` chain runs. That's also why **order matters**. With `score = 95`, the first switch (`score >= 90`) diverts the train to `'A'`. It never reaches the `>= 80` switch, even though 95 is also ≥ 80.",
+              },
+              {
+                id: "railroad-diagram",
+                type: "code",
+                language: "text",
+                caption: "The grade chain below, drawn as a rail line (score = 85)",
+                code: `  train ══╦══════════╦══════════╦══════════╗
+          ║ >= 90?   ║ >= 80?   ║ >= 70?   ║ else
+          ║ no       ║ YES ◄──  ║          ║
+          ▼          ▼          ▼          ▼
+         'A'        'B'        'C'        'F'
+                     ║
+  ═══════════════════╩═══ rejoin main line → next statement`,
+              },
               {
                 id: "chain",
                 type: "code",
@@ -819,6 +1031,12 @@ switch (month) {
 // prints: Feb Mar`,
               },
               {
+                id: "decision-branch-guide",
+                type: "callout",
+                variant: "tip",
+                text: "🎮 **Hands-On Experiment:** Each tab of the visualizer below tests one idea:\n\n1. **switch:** Pick `day` 1 and note the highlighted path. Then turn the **break statements** toggle off. Predict which outputs now run before you look, and trace where execution stops.\n2. **ChineseZodiac:** Enter your own birth year, then add or subtract 12. Does the sign change? Why not? Then click a remainder tile to jump to a year with that sign.\n3. **Dangling else:** Set `i = 3`, `j = 2`, `k = 5`. Decide which `if` the `else` belongs to *before* you read the result. Then compare it with the braced fix from the if-else lesson.",
+              },
+              {
                 id: "decision-branch",
                 type: "interactive",
                 interactiveWidgetId: "decision-branch",
@@ -905,6 +1123,112 @@ public class GrossPayCalculator {
               "Use final constants for business rules.",
             ],
           },
+          {
+            id: "m5-u2-l3",
+            title: "Case Study: ChineseZodiac",
+            description: "Turn a birth year into one of twelve signs with year % 12 and a switch.",
+            estimatedMinutes: 12,
+            blocks: [
+              {
+                id: "cycle-idea",
+                type: "text",
+                text: "The Chinese zodiac repeats every **12 years**: Rat, Ox, Tiger and so on, then back to Rat. Whenever something repeats in a fixed cycle, the remainder operator `%` is the tool for the job. `year % 12` throws away every complete 12-year cycle and keeps only **where you are inside the current one**. That position is always a whole number from 0 to 11, so it can index exactly 12 signs.",
+              },
+              {
+                id: "mod-formula",
+                type: "formula",
+                latex: String.raw`r = \text{year} \bmod 12, \qquad r \in \{0, 1, \dots, 11\}`,
+                caption: "Any year collapses to one of exactly twelve remainders",
+              },
+              {
+                id: "clock-analogy",
+                type: "callout",
+                variant: "info",
+                text: "**Analogy: a 12-hour clock.** If it's 3 o'clock, then 12 hours later it's 3 o'clock again. Years work the same way: 1996, 2008 and 2020 differ by multiples of 12, so all three leave remainder 4, which is the **Rat**.",
+              },
+              {
+                id: "mapping-table",
+                type: "text",
+                text: "| `year % 12` | Sign | Example year |\n|---|---|---|\n| 0 | Monkey | 2016 |\n| 1 | Rooster | 2017 |\n| 2 | Dog | 2018 |\n| 3 | Pig | 2019 |\n| 4 | Rat | 1996 |\n| 5 | Ox | 1997 |\n| 6 | Tiger | 1998 |\n| 7 | Rabbit | 1999 |\n| 8 | Dragon | 2000 |\n| 9 | Snake | 2001 |\n| 10 | Horse | 2002 |\n| 11 | Sheep | 2003 |",
+              },
+              {
+                id: "why-monkey",
+                type: "callout",
+                variant: "tip",
+                text: "Why does the table start at **Monkey** and not Rat? Remainder 0 belongs to years divisible by 12, such as 2016 and 2004, and those happen to be Monkey years. The order of the signs never changes. Only the sign that lines up with remainder 0 is set by the calendar.",
+              },
+              {
+                id: "worked-example",
+                type: "code",
+                language: "text",
+                caption: "Worked example: 1996",
+                code: `1996 ÷ 12 = 166 full cycles, remainder ?
+166 × 12  = 1992
+1996 − 1992 = 4        → 1996 % 12 == 4
+case 4                 → "Rat"`,
+              },
+              {
+                id: "program",
+                type: "code",
+                language: "java",
+                caption: "ChineseZodiac.java (Lab 5, Exercise 5.2)",
+                code: `import java.util.Scanner;
+
+public class ChineseZodiac {
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+        System.out.print("Enter a birth year: ");
+        int year = input.nextInt();
+
+        String sign;
+        switch (year % 12) {          // always 0..11
+            case 0:  sign = "Monkey";  break;
+            case 1:  sign = "Rooster"; break;
+            case 2:  sign = "Dog";     break;
+            case 3:  sign = "Pig";     break;
+            case 4:  sign = "Rat";     break;
+            case 5:  sign = "Ox";      break;
+            case 6:  sign = "Tiger";   break;
+            case 7:  sign = "Rabbit";  break;
+            case 8:  sign = "Dragon";  break;
+            case 9:  sign = "Snake";   break;
+            case 10: sign = "Horse";   break;
+            default: sign = "Sheep";   // only 11 is left
+        }
+        System.out.println("Zodiac Sign: " + sign);
+    }
+}`,
+              },
+              {
+                id: "why-switch",
+                type: "text",
+                text: "**Why `switch` fits here:** the remainder is one `int` with twelve exact, separate values. That's the case `switch` was made for. An `if-else` chain would work too, but it would need eleven `==` comparisons and be harder to scan. Every case ends in `break`. Without it, `case 4` would fall through and overwrite `\"Rat\"` with `\"Ox\"`, `\"Tiger\"` and so on down to `\"Sheep\"`.",
+              },
+              {
+                id: "default-note",
+                type: "callout",
+                variant: "info",
+                text: "Using `default` for remainder 11 does more than save a line. The compiler can see that `sign` is assigned on every path, so `System.out.println(sign)` compiles. If you write `case 11:` and leave out `default`, you get *\"variable sign might not have been initialized\"*.",
+              },
+              {
+                id: "negative-pitfall",
+                type: "callout",
+                variant: "error_pitfall",
+                text: "In Java, `%` keeps the sign of the left operand: `-5 % 12` is `-5`, not `7`. A negative year would match no case and land in `default`. Validate that `year > 0`, or normalise with `((year % 12) + 12) % 12`.",
+              },
+              {
+                id: "quiz",
+                type: "quiz_preview",
+                quizType: "output_prediction",
+                text: "What does ChineseZodiac print for the year 2024? Show the remainder you computed.",
+              },
+            ],
+            keyTakeaways: [
+              "year % 12 maps any year onto the cycle positions 0 to 11.",
+              "Years 12 apart always share a sign, because they have the same remainder.",
+              "switch on the remainder, with a break in every case, picks exactly one sign.",
+            ],
+          },
         ],
       },
     ],
@@ -914,12 +1238,14 @@ public class GrossPayCalculator {
         description:
           "Lab 5, Exercise 5.1: read hours and hourly rate, validate them, and print gross pay with overtime at 1.5× beyond 40 hours, formatted to two decimals (45 h at $20.00 → Gross Pay: $950.00).",
         filename: "GrossPayCalculator.java",
+        labReference: "Lab 5, Exercise 5.1",
       },
       {
         title: "Chinese Zodiac",
         description:
           "Lab 5, Exercise 5.2: read a birth year and print its animal sign with a switch on year % 12 (0 = Monkey … 11 = Sheep), e.g. 1996 → Zodiac Sign: Rat.",
         filename: "ChineseZodiac.java",
+        labReference: "Lab 5, Exercise 5.2",
       },
     ],
   },
@@ -998,6 +1324,34 @@ boolean exactlyOne = hasCoupon ^ isMember;`,
             estimatedMinutes: 14,
             blocks: [
               {
+                id: "why-loops",
+                type: "text",
+                text: "A **loop** repeats a block of code while a condition stays `true`. Without loops, printing 1 to 100 would take 100 `println` lines. With a loop it takes three. Java has three loop forms. The key question that separates them is: **is the condition checked *before* or *after* the body runs?**",
+              },
+              {
+                id: "while-analogy",
+                type: "callout",
+                variant: "info",
+                text: "**`while` = a security guard at the door.** The guard checks your ID **before** you go in. If the check fails the first time, you never get inside, not even once. Each time you come back around, the guard checks again. A `while` loop is a **pre-test** loop, so its body can run **zero** times.",
+              },
+              {
+                id: "do-while-analogy",
+                type: "callout",
+                variant: "info",
+                text: "**`do-while` = an amusement-park ride.** You get on and ride **once** first. Only when the ride ends does the operator ask, \"Do you have a pass for another go?\" If yes, you ride again. If no, you get off. A `do-while` loop is a **post-test** loop, so its body always runs **at least once**. That makes it ideal for menus and input prompts, which must show at least once.",
+              },
+              {
+                id: "for-analogy",
+                type: "callout",
+                variant: "info",
+                text: "**`for` = running a set number of laps.** You know before you start that you'll run exactly *n* laps. The start, the stopping rule and the lap counter all fit on one line: `for (start; condition; update)`. Use it when the number of repetitions is **known in advance**.",
+              },
+              {
+                id: "loop-compare",
+                type: "text",
+                text: "| Loop | Analogy | Condition checked | Minimum runs | Typical use |\n|---|---|---|---|---|\n| `while` | Security guard | Before the body | 0 | Repeat until something changes (unknown count) |\n| `do-while` | Amusement-park ride | After the body | 1 | Input validation, menus |\n| `for` | Counted laps | Before the body | 0 | Known number of repetitions |",
+              },
+              {
                 id: "while",
                 type: "code",
                 language: "java",
@@ -1031,10 +1385,16 @@ for (int k = 1; k <= 100; k++) {
 System.out.println(sum); // 5050`,
               },
               {
+                id: "loop-debugger-guide",
+                type: "callout",
+                variant: "tip",
+                text: "🎮 **Hands-On Experiment:** Test the guard and the ride in the debugger below:\n\n1. On the **while** tab, set `start` to `6` and `limit` to `5`. Step through. How many times does the body run? The guard turned you away at the door.\n2. Keep those values and switch to the **do-while** tab. Step again. The body runs once before the check. That's the ride you got on before anyone asked for a pass.\n3. On the **for** tab, change `n` and use the formula below to predict the final `sum` before you step to the end.\n4. On the **Sentinel** tab, move `-1` to the front of the input. What prints now, and why is the average never computed?",
+              },
+              {
                 id: "loop-debugger",
                 type: "interactive",
                 interactiveWidgetId: "loop-debugger",
-                caption: "Step through each loop form with live variables and condition checks. The Sentinel tab runs SentinelValue.java from Lab 6, Exercise 6.2, which stops on 0.",
+                caption: "Step through each loop form with live variables and condition checks. The Sentinel tab runs SentinelValue.java from Lab 6, Exercise 6.2, which stops on -1.",
               },
               {
                 id: "gauss",
@@ -1169,12 +1529,14 @@ public class GuessNumber {
         description:
           "Lab 6, Exercise 6.1: pick a random target in 0–100 with Math.random() and loop until the user guesses it, printing too-high/too-low hints and the attempt count.",
         filename: "GuessNumber.java",
+        labReference: "Lab 6, Exercise 6.1",
       },
       {
         title: "Sentinel Running Average",
         description:
-          "Lab 6, Exercise 6.2: read integers until the sentinel 0, then print the sum and floating-point average; if 0 is entered first, print \"No numbers were entered.\"",
+          "Lab 6, Exercise 6.2: read integers until the sentinel -1, then print the sum and floating-point average; if -1 is entered first, print \"No numbers were entered.\"",
         filename: "SentinelValue.java",
+        labReference: "Lab 6, Exercise 6.2",
       },
     ],
   },

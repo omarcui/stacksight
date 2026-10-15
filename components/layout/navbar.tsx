@@ -38,6 +38,8 @@ function getBreadcrumbs(pathname: string): Crumb[] {
       return [home, { label: "Java Sandbox" }];
     case "progress":
       return [home, { label: "Progress" }];
+    case "flash-trace":
+      return [home, { label: "Flash-Trace" }];
     default:
       return [home, { label: decodeURIComponent(section) }];
   }
@@ -45,7 +47,7 @@ function getBreadcrumbs(pathname: string): Crumb[] {
 
 export function Navbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface/80 px-3 backdrop-blur-md supports-[backdrop-filter]:bg-surface/70 sm:px-4">
+    <header className="relative z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface/80 px-3 backdrop-blur-md supports-[backdrop-filter]:bg-surface/70 sm:px-4">
       <button
         type="button"
         onClick={onOpenMobileNav}

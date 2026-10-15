@@ -8,11 +8,13 @@ import {
   countTotalLessons,
   findLesson,
   findModuleLesson,
+  flattenLessons,
   getModuleById,
   getModuleLessons,
   isModuleId,
+  type LessonLocation,
 } from "@/lib/curriculum-utils";
-import type { ModuleId } from "@/types/curriculum";
+import type { Module, ModuleId } from "@/types/curriculum";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,6 +55,17 @@ type CourseData = {
   bookmarks: LessonRef[];
   /** Epoch ms each lesson was first completed, keyed by lesson ID. */
   lessonCompletedAt: Record<string, number>;
+  /** Best Flash-Trace session score. */
+  flashTraceHighScore: number;
+  /** Longest run of consecutive correct Flash-Trace answers. */
+  flashTraceBestStreak: number;
+  /** Completed Flash-Trace sessions. */
+  flashTraceSessionsCount: number;
+  /**
+   * Modules flagged by missed Flash-Trace questions, in curriculum order. Combined with
+   * low quiz scores in {@link useWeakModuleIds}.
+   */
+  weakTopics: ModuleId[];
 };
 
 export type LessonRef = { moduleId: ModuleId; lessonId: string };
@@ -69,6 +82,16 @@ type CourseActions = {
   saveSnippet: (title: string, code?: string) => void;
   deleteSnippet: (id: string) => void;
   toggleBookmark: (moduleId: string, lessonId: string) => void;
+  /**
+   * Records a finished Flash-Trace session. Modules in `missedTopicTags` are flagged as
+   * weak topics; modules in `clearedTopicTags` (answered, never missed) lose the flag.
+   */
+  saveFlashTraceResult: (
+    score: number,
+    streak: number,
+    missedTopicTags: ModuleId[],
+    clearedTopicTags?: ModuleId[],
+  ) => void;
   resetProgress: () => void;
 };
 
@@ -94,6 +117,10 @@ const initialData: CourseData = {
   savedSnippets: [],
   bookmarks: [],
   lessonCompletedAt: {},
+  flashTraceHighScore: 0,
+  flashTraceBestStreak: 0,
+  flashTraceSessionsCount: 0,
+  weakTopics: [],
 };
 
 const EMPTY_MODULE_PROGRESS: ModuleProgress = { completedLessons: [], completedSubtopics: [] };
@@ -228,11 +255,29 @@ export const useCourseStore = create<CourseState>()(
           };
         }),
 
+      saveFlashTraceResult: (score, streak, missedTopicTags, clearedTopicTags = []) =>
+        set((state) => {
+          const missed = new Set(missedTopicTags.filter(isModuleId));
+          const cleared = new Set(clearedTopicTags.filter((id) => isModuleId(id) && !missed.has(id)));
+          const flagged = new Set(state.weakTopics.filter((id) => !cleared.has(id)));
+          missed.forEach((id) => flagged.add(id));
+          return {
+            flashTraceHighScore: Math.max(state.flashTraceHighScore, Math.max(0, Math.round(score))),
+            flashTraceBestStreak: Math.max(state.flashTraceBestStreak, Math.max(0, Math.floor(streak))),
+            flashTraceSessionsCount: state.flashTraceSessionsCount + 1,
+            weakTopics: curriculumData.map((m) => m.id).filter((id) => flagged.has(id)),
+          };
+        }),
+
       resetProgress: () =>
         set({
           progress: {},
           quizScores: {},
           lessonCompletedAt: {},
+          flashTraceHighScore: 0,
+          flashTraceBestStreak: 0,
+          flashTraceSessionsCount: 0,
+          weakTopics: [],
           activeModuleId: null,
           activeLessonId: null,
         }),
@@ -251,6 +296,10 @@ export const useCourseStore = create<CourseState>()(
         savedSnippets,
         bookmarks,
         lessonCompletedAt,
+        flashTraceHighScore,
+        flashTraceBestStreak,
+        flashTraceSessionsCount,
+        weakTopics,
       }) => ({
         progress,
         quizScores,
@@ -260,6 +309,10 @@ export const useCourseStore = create<CourseState>()(
         savedSnippets,
         bookmarks,
         lessonCompletedAt,
+        flashTraceHighScore,
+        flashTraceBestStreak,
+        flashTraceSessionsCount,
+        weakTopics,
       }),
       // Pages are prerendered with the initial state; rehydrating from localStorage
       // after mount (see useHydrateCourseStore) keeps server and client markup identical.
@@ -351,8 +404,12 @@ export function migrateCourseState(persistedState: unknown, version: number): Co
     sandboxCode: typeof raw.sandboxCode === "string" ? raw.sandboxCode : DEFAULT_SANDBOX_CODE,
     savedSnippets: Array.isArray(raw.savedSnippets) ? (raw.savedSnippets as CodeSnippet[]) : [],
     bookmarks,
-    // v1 never recorded completion times.
+    // v1 never recorded completion times or Flash-Trace sessions.
     lessonCompletedAt: {},
+    flashTraceHighScore: 0,
+    flashTraceBestStreak: 0,
+    flashTraceSessionsCount: 0,
+    weakTopics: [],
   };
 }
 
@@ -439,17 +496,47 @@ export function useCourseStats() {
 /** A latest quiz score below this marks the module as a weak topic. */
 export const WEAK_TOPIC_THRESHOLD = 60;
 
-/** Module IDs whose latest quiz score is below the threshold, in curriculum order. */
+/** True when the module's latest quiz score is below {@link WEAK_TOPIC_THRESHOLD}. */
+export function isWeakQuizResult(result: QuizResult | undefined): boolean {
+  return result !== undefined && result.score < WEAK_TOPIC_THRESHOLD;
+}
+
+/**
+ * Module IDs flagged as weak topics, in curriculum order: a latest quiz score below the
+ * threshold, or a missed question in the latest Flash-Trace session that covered it.
+ */
 export function useWeakModuleIds(): ModuleId[] {
   const quizScores = useCourseStore((s) => s.quizScores);
+  const weakTopics = useCourseStore((s) => s.weakTopics);
   return useMemo(
     () =>
       curriculumData
-        .filter((m) => {
-          const result = quizScores[m.id];
-          return result !== undefined && result.score < WEAK_TOPIC_THRESHOLD;
-        })
+        .filter((m) => isWeakQuizResult(quizScores[m.id]) || weakTopics.includes(m.id))
         .map((m) => m.id),
-    [quizScores],
+    [quizScores, weakTopics],
   );
+}
+
+const NO_LESSONS: string[] = [];
+
+/** Completed lesson IDs for a module; empty until the store has hydrated. */
+export function useCompletedLessonIds(moduleId: ModuleId): ReadonlySet<string> {
+  const hydrated = useCourseStoreHydrated();
+  const ids = useCourseStore((s) => s.progress[moduleId]?.completedLessons ?? NO_LESSONS);
+  return useMemo(() => new Set(hydrated ? ids : NO_LESSONS), [hydrated, ids]);
+}
+
+/**
+ * The lesson open in a module's reader: the remembered active lesson when it belongs
+ * to this module, otherwise the module's first lesson. Shared by the reader and sidebar.
+ */
+export function useCurrentLesson(mod: Module): LessonLocation | undefined {
+  const hydrated = useCourseStoreHydrated();
+  const activeModuleId = useCourseStore((s) => s.activeModuleId);
+  const activeLessonId = useCourseStore((s) => s.activeLessonId);
+  const locations = useMemo(() => flattenLessons([mod]), [mod]);
+
+  const remembered =
+    hydrated && activeModuleId === mod.id ? locations.find((l) => l.lesson.id === activeLessonId) : undefined;
+  return remembered ?? locations[0];
 }

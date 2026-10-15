@@ -145,14 +145,15 @@ function forProgram(n: number): Program {
   return { lines, steps: r.steps };
 }
 
-const PROMPT = "Enter a number (0 to stop): ";
+const SENTINEL = -1;
+const PROMPT = `Enter a number (${SENTINEL} to stop): `;
 
 function sentinelProgram(tokens: number[]): Program {
   const lines = [
     "int sum = 0, count = 0;",
     `System.out.print("${PROMPT}");`,
     "int number = input.nextInt();",
-    "while (number != 0) {",
+    `while (number != ${SENTINEL}) {`,
     "    sum += number;",
     "    count++;",
     `    System.out.print("${PROMPT}");`,
@@ -181,9 +182,9 @@ function sentinelProgram(tokens: number[]): Program {
   });
 
   for (;;) {
-    const ok = number !== 0;
+    const ok = number !== SENTINEL;
     r.step(4, ok ? `${number} is real data, so process it.` : "The sentinel arrived, so the loop stops without adding it.", {
-      cond: { expr: "number != 0", values: `${number} != 0`, value: ok },
+      cond: { expr: `number != ${SENTINEL}`, values: `${number} != ${SENTINEL}`, value: ok },
     });
     if (!ok) break;
     const before = sum;
@@ -224,7 +225,7 @@ const INTRO: Record<LoopKind, string> = {
   while: "Pre-test loop: the condition is checked before every pass, so the body may run zero times.",
   "do-while": "Post-test loop: the body runs first and the condition is checked after, so it always runs at least once.",
   for: "Counter-controlled loop: initialisation, condition and update sit together in the header.",
-  sentinel: "SentinelValue.java: read integers until 0, then print their sum and average. 0 is the sentinel and is never counted.",
+  sentinel: `SentinelValue.java: read integers until ${SENTINEL}, then print their sum and average. ${SENTINEL} is the sentinel and is never counted.`,
 };
 
 const MAX_TOKENS = 10;
@@ -234,8 +235,8 @@ function parseTokens(raw: string) {
   const bad = parts.find((p) => !/^-?\d{1,6}$/.test(p));
   if (bad) return { error: `"${bad}" is not an int nextInt() can read.` };
   const all = parts.map(Number).slice(0, MAX_TOKENS);
-  const appended = !all.includes(0);
-  const tokens = appended ? [...all, 0] : all;
+  const appended = !all.includes(SENTINEL);
+  const tokens = appended ? [...all, SENTINEL] : all;
   return { tokens, appended };
 }
 
@@ -243,7 +244,7 @@ export function LoopExecutionDebugger() {
   const tabs = useWidgetTabs(TABS, "while");
   const [range, setRange] = useState({ start: 1, limit: 5 });
   const [n, setN] = useState(5);
-  const [raw, setRaw] = useState("5 8 -3 0 7");
+  const [raw, setRaw] = useState("5 8 0 -1 7");
   const inputId = useId();
 
   const kind = tabs.active;
@@ -296,12 +297,16 @@ export function LoopExecutionDebugger() {
               )}
             />
             {parsed.error && <p className="text-xs text-danger">{parsed.error}</p>}
-            {parsed.appended && <p className="text-xs text-muted">No 0 in the input, so a sentinel 0 was appended to end the loop.</p>}
+            {parsed.appended && (
+              <p className="text-xs text-muted">
+                No {SENTINEL} in the input, so a sentinel {SENTINEL} was appended to end the loop.
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
               {[
-                ["5 8 -3 0 7", "Mixed values"],
-                ["0", "Sentinel first"],
-                ["10 20 30 0", "Three scores"],
+                ["5 8 0 -1 7", "Mixed values"],
+                ["-1", "Sentinel first"],
+                ["10 20 30 -1", "Three scores"],
               ].map(([value, label]) => (
                 <button
                   key={value}
@@ -401,7 +406,7 @@ function WatchPanel({ step }: { step: LoopStep }) {
 }
 
 function InputTape({ tokens, consumed }: { tokens: number[]; consumed: number }) {
-  const sentinelAt = tokens.indexOf(0);
+  const sentinelAt = tokens.indexOf(SENTINEL);
   return (
     <div className="space-y-1">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Input stream</p>

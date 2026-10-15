@@ -144,6 +144,8 @@ export interface ModuleDeliverable {
   description: string;
   /** Expected submission filename, e.g. "LinkedListLab.java". */
   filename: string;
+  /** Lab manual exercise this file answers, e.g. "Lab 4, Exercise 4.2". */
+  labReference?: string;
 }
 
 export interface Module {
@@ -154,8 +156,8 @@ export interface Module {
   /** lucide-react icon export name, e.g. "Boxes". */
   iconName: string;
   units: Unit[];
-  /** One file, or several when the lab has multiple exercises; normalise with `getDeliverables()`. */
-  deliverable: ModuleDeliverable | ModuleDeliverable[];
+  /** Every file the module's lab asks for, in exercise order. */
+  deliverable: ModuleDeliverable[];
 }
 
 export type Curriculum = readonly Module[];

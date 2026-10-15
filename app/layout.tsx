@@ -35,12 +35,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
+      className={`${geistSans.variable} ${jetbrainsMono.variable} dark h-full overflow-hidden antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="h-full bg-background text-foreground">
+      {/* The viewport never scrolls: the app shell's <main> is the page scroll container. */}
+      <body className="h-full overflow-hidden overscroll-none bg-background text-foreground">
         <AppShell>{children}</AppShell>
       </body>
     </html>

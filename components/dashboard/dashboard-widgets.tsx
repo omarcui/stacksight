@@ -11,12 +11,14 @@ import {
   Layers,
   Star,
   Target,
+  Zap,
 } from "lucide-react";
 import { curriculumData, curriculumPhases } from "@/data/curriculumData";
 import { findModuleLesson, getModuleById, lessonNumber, moduleNumber } from "@/lib/curriculum-utils";
 import { cn } from "@/lib/utils";
 import {
   WEAK_TOPIC_THRESHOLD,
+  isWeakQuizResult,
   useCourseStats,
   useCourseStore,
   useCourseStoreHydrated,
@@ -179,7 +181,7 @@ function ModuleCard({
           {weak && (
             <Star
               className="size-3.5 fill-heap text-heap"
-              aria-label={`Weak topic: latest quiz below ${WEAK_TOPIC_THRESHOLD}%`}
+              aria-label="Weak topic"
             />
           )}
           {status === "completed" && <Check className="size-4 text-success" aria-hidden />}
@@ -211,6 +213,7 @@ export function WeakTopics() {
   const hydrated = useCourseStoreHydrated();
   const weakIds = useWeakModuleIds();
   const quizScores = useCourseStore((s) => s.quizScores);
+  const flashTraceFlags = useCourseStore((s) => s.weakTopics);
 
   return (
     <section id="weak-topics" aria-labelledby="weak-heading" className={cn(cardClass, "h-full scroll-mt-20")}>
@@ -222,7 +225,8 @@ export function WeakTopics() {
         <ListSkeleton />
       ) : weakIds.length === 0 ? (
         <p className="mt-3 text-sm text-muted">
-          Nothing flagged. Modules with a latest quiz score below {WEAK_TOPIC_THRESHOLD}% show up here.
+          Nothing flagged. Modules with a latest quiz score below {WEAK_TOPIC_THRESHOLD}% or a missed Flash-Trace
+          question show up here.
         </p>
       ) : (
         <ul className="mt-2 divide-y divide-border">
@@ -234,7 +238,8 @@ export function WeakTopics() {
               >
                 <span className="font-mono text-xs text-muted">{moduleNumber(id)}</span>
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">{getModuleById(curriculumData, id)?.title}</span>
-                <ScorePill score={quizScores[id]?.score ?? 0} />
+                {flashTraceFlags.includes(id) && <FlashTracePill />}
+                {isWeakQuizResult(quizScores[id]) && <ScorePill score={quizScores[id]?.score ?? 0} />}
               </Link>
             </li>
           ))}
@@ -361,6 +366,19 @@ export function ScorePill({ score }: { score: number }) {
   return (
     <span className={cn("grid h-7 w-12 shrink-0 place-items-center rounded-md text-xs font-semibold tabular-nums", tone)}>
       {score}%
+    </span>
+  );
+}
+
+/** Marks a weak topic flagged by missed Flash-Trace questions. */
+export function FlashTracePill() {
+  return (
+    <span
+      title="Missed in Flash-Trace"
+      className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md bg-heap/15 px-2 text-xs font-semibold text-heap"
+    >
+      <Zap className="size-3.5" aria-hidden />
+      <span className="sr-only">Missed in</span> Trace
     </span>
   );
 }
