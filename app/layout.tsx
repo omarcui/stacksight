@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { curriculumData } from "@/data/curriculumData";
 import { assertValidCurriculum } from "@/lib/curriculum-utils";
 import { themeInitScript } from "@/lib/theme";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const geistSans = Geist({
