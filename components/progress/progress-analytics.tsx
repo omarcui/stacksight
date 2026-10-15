@@ -8,9 +8,10 @@ import { quizData } from "@/data/quizData";
 import { findLesson, flattenLessons, getModuleById, lessonNumber, moduleNumber } from "@/lib/curriculum-utils";
 import { getModuleIcon } from "@/lib/module-icons";
 import { cn } from "@/lib/utils";
-import { Bar, ListSkeleton, ScorePill } from "@/components/dashboard/dashboard-widgets";
+import { Bar, FlashTracePill, ListSkeleton, ScorePill } from "@/components/dashboard/dashboard-widgets";
 import {
   WEAK_TOPIC_THRESHOLD,
+  isWeakQuizResult,
   useCourseStats,
   useCourseStore,
   useCourseStoreHydrated,
@@ -289,7 +290,7 @@ function WeakTopicReview() {
           Weak topics to review
         </h2>
         <span className="text-xs tabular-nums text-muted">
-          {hydrated ? `${weakIds.length} flagged · below ${WEAK_TOPIC_THRESHOLD}%` : "—"}
+          {hydrated ? `${weakIds.length} flagged · quiz below ${WEAK_TOPIC_THRESHOLD}% or Flash-Trace miss` : "—"}
         </span>
       </div>
 
@@ -297,8 +298,8 @@ function WeakTopicReview() {
         <ListSkeleton />
       ) : weakIds.length === 0 ? (
         <p className="rounded-xl border border-border bg-surface p-4 text-sm text-muted">
-          Nothing flagged. Modules with a latest quiz score below {WEAK_TOPIC_THRESHOLD}% show up here with a review
-          plan.
+          Nothing flagged. Modules with a latest quiz score below {WEAK_TOPIC_THRESHOLD}% or a missed Flash-Trace
+          question show up here with a review plan.
         </p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -316,9 +317,11 @@ function WeakTopicReview() {
 function WeakTopicCard({ moduleId }: { moduleId: ModuleId }) {
   const mod = getModuleById(curriculumData, moduleId);
   const result = useCourseStore((s) => s.quizScores[moduleId]);
+  const flashTraceFlag = useCourseStore((s) => s.weakTopics.includes(moduleId));
   const completed = useCourseStore((s) => s.progress[moduleId]?.completedLessons);
   const setActiveLesson = useCourseStore((s) => s.setActiveLesson);
-  if (!mod || !result) return null;
+  if (!mod) return null;
+  const weakQuiz = isWeakQuizResult(result);
 
   const done = new Set(completed ?? []);
   // Unfinished lessons first: they are the most likely gaps behind the low score.
@@ -334,10 +337,16 @@ function WeakTopicCard({ moduleId }: { moduleId: ModuleId }) {
           <span className="font-mono text-xs text-muted">{moduleNumber(moduleId)} |</span>
           <h3 className="text-sm font-semibold leading-snug">{mod.title}</h3>
         </span>
-        <ScorePill score={result.score} />
+        <span className="flex shrink-0 gap-1.5">
+          {flashTraceFlag && <FlashTracePill />}
+          {result && weakQuiz && <ScorePill score={result.score} />}
+        </span>
       </header>
       <p className="mt-1 text-xs tabular-nums text-muted">
-        Best {result.bestScore}% · {result.attempts} attempt{result.attempts === 1 ? "" : "s"}
+        {result
+          ? `Best ${result.bestScore}% · ${result.attempts} attempt${result.attempts === 1 ? "" : "s"}`
+          : "Quiz not attempted"}
+        {flashTraceFlag && " · missed in Flash-Trace"}
       </p>
 
       <p className={cn(eyebrowClass, "mt-4")}>Review these lessons</p>
@@ -367,7 +376,7 @@ function WeakTopicCard({ moduleId }: { moduleId: ModuleId }) {
           className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-heap text-xs font-semibold text-role-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           <RotateCcw className="size-3.5" aria-hidden />
-          Retake quiz
+          {result ? "Retake quiz" : "Take quiz"}
         </Link>
       </div>
     </article>

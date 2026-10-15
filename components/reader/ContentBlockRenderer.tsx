@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import { Puzzle } from "lucide-react";
+import { MousePointerClick, Puzzle } from "lucide-react";
 import { ExponentialEvaluator } from "@/components/interactive/module1/ExponentialEvaluator";
 import { ExecutionLifecycleSimulator } from "@/components/interactive/module1/ExecutionLifecycleSimulator";
 import { FlowchartRunner } from "@/components/interactive/module1/FlowchartRunner";
@@ -40,7 +40,7 @@ const WIDGETS: Record<WidgetId, ComponentType> = {
 export function ContentBlockRenderer({ block, moduleId }: { block: ContentBlock; moduleId: ModuleId }) {
   switch (block.type) {
     case "text":
-      return <Markdown text={block.text} />;
+      return <Markdown text={block.text} className="space-y-4 text-base text-foreground/85 md:text-lg" />;
     case "code":
       return <CodeBlock code={block.code} language={block.language} caption={block.caption} />;
     case "callout":
@@ -49,14 +49,7 @@ export function ContentBlockRenderer({ block, moduleId }: { block: ContentBlock;
       return <Formula latex={block.latex} caption={block.caption} />;
     case "interactive": {
       const Widget = WIDGETS[block.interactiveWidgetId];
-      if (Widget) {
-        return (
-          <figure className="space-y-2">
-            <Widget />
-            {block.caption && <figcaption className="text-center text-xs text-muted">{block.caption}</figcaption>}
-          </figure>
-        );
-      }
+      if (Widget) return <WidgetCard caption={block.caption} Widget={Widget} />;
       return <Stub>Interactive exercise coming soon.</Stub>;
     }
     case "quiz_preview":
@@ -66,6 +59,27 @@ export function ContentBlockRenderer({ block, moduleId }: { block: ContentBlock;
       return exhaustive;
     }
   }
+}
+
+/** Interactive widgets sit in an accent-bordered card with a badge header, so they read as a hands-on stop. */
+function WidgetCard({ Widget, caption }: { Widget: ComponentType; caption?: string }) {
+  return (
+    <figure className="overflow-hidden rounded-2xl border border-accent/20 bg-surface-muted/60">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-accent/15 px-4 py-3">
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 text-xs font-semibold text-accent">
+          <MousePointerClick className="size-3.5" aria-hidden />
+          Interactive
+        </span>
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Hands-on visualizer</span>
+      </div>
+      {caption && (
+        <figcaption className="px-4 pt-3 text-sm leading-relaxed text-foreground/80 md:text-[15px]">{caption}</figcaption>
+      )}
+      <div className="p-3 sm:p-4">
+        <Widget />
+      </div>
+    </figure>
+  );
 }
 
 /** Not part of the reader yet; a neutral stub keeps the lesson reading in order. */

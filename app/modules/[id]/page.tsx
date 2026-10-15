@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps<"/modules/[id]">): 
   return { title: getModuleById(curriculumData, id)?.title ?? "Module not found" };
 }
 
-// Lesson reader: unit accordion + active lesson pane; see docs/ui-spec.md §3.5.
+// Lesson reader: full-width lesson pane; the unit outline lives in the sidebar. See docs/ui-spec.md §3.5.
 export default async function ModulePage({ params }: PageProps<"/modules/[id]">) {
   const { id } = await params;
   const mod = getModuleById(curriculumData, id);

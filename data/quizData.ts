@@ -795,10 +795,10 @@ do {
       {
         id: "q-m6-05",
         type: "syntax_fix",
-        prompt: "This sentinel loop compiles, but if the first number isn't 0 it never ends. Which line, added at the end of the loop body, fixes it?",
+        prompt: "This sentinel loop compiles, but if the first number isn't -1 it never ends. Which line, added at the end of the loop body, fixes it?",
         code: `int value = input.nextInt();
 int sum = 0;
-while (value != 0) {
+while (value != -1) {
     sum += value;
 }
 System.out.println("Sum: " + sum);`,
@@ -809,13 +809,13 @@ System.out.println("Sum: " + sum);`,
         options: [
           { id: "a", text: "value = input.nextInt();", isCode: true },
           { id: "b", text: "int value = input.nextInt();", isCode: true, feedback: "Redeclaring `value` in the same scope is a compile error." },
-          { id: "c", text: "value--;", isCode: true, feedback: "That ignores user input and never stops for negative values." },
+          { id: "c", text: "value--;", isCode: true, feedback: "That ignores user input; a sentinel loop must stop only when the user types -1." },
           { id: "d", text: "break;", isCode: true, feedback: "That exits after one number, so it is no longer a sentinel loop." },
         ],
         correctOptionId: "a",
         fixedCode: `int value = input.nextInt();
 int sum = 0;
-while (value != 0) {
+while (value != -1) {
     sum += value;
     value = input.nextInt();
 }

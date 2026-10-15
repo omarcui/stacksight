@@ -88,9 +88,9 @@ export function findModuleLesson(
 // ---------------------------------------------------------------------------
 
 /** Zero-padded module number, e.g. `"module-1"` → `"01"` (see docs/ui-spec.md §2.4). */
-/** A module's deliverables as a list, whether authored as one object or an array. */
+/** A module's deliverables, in exercise order. */
 export function getDeliverables(module: Module): ModuleDeliverable[] {
-  return Array.isArray(module.deliverable) ? module.deliverable : [module.deliverable];
+  return module.deliverable;
 }
 
 export function moduleNumber(moduleId: string): string {
@@ -235,11 +235,11 @@ export function validateCurriculum(curriculum: Curriculum): ValidationResult {
     requireText(mPath, "description", module.description);
     requireText(mPath, "iconName", module.iconName);
 
-    const deliverables = module.deliverable ? getDeliverables(module) : [];
+    const deliverables = Array.isArray(module.deliverable) ? module.deliverable : [];
     if (deliverables.length === 0) error(mPath, "Missing deliverable");
     const seenFilenames = new Set<string>();
     deliverables.forEach((d, di) => {
-      const dPath = Array.isArray(module.deliverable) ? `${mPath}.deliverable[${di}]` : `${mPath}.deliverable`;
+      const dPath = `${mPath}.deliverable[${di}]`;
       requireText(dPath, "title", d.title);
       requireText(dPath, "description", d.description);
       requireText(dPath, "filename", d.filename);

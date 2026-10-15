@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MotionConfig } from "framer-motion";
+import { FlashTraceModal } from "@/components/flash-trace/FlashTraceModal";
 import { hydrateCourseStore } from "@/store/useCourseStore";
 import { Navbar } from "./navbar";
 import { Sidebar } from "./sidebar";
@@ -13,7 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Load persisted course progress after mount (the store skips automatic hydration).
   useEffect(() => hydrateCourseStore(), []);
 
-  // While the mobile drawer is open: close on Escape or when resizing to desktop, and lock page scroll.
+  // While the mobile drawer is open: close on Escape or when resizing to desktop.
   useEffect(() => {
     if (!mobileOpen) return;
 
@@ -28,13 +29,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     window.addEventListener("keydown", onKeyDown);
     desktop.addEventListener("change", onBreakpoint);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
 
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       desktop.removeEventListener("change", onBreakpoint);
-      document.body.style.overflow = previousOverflow;
     };
   }, [mobileOpen]);
 
@@ -47,10 +45,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
 
-      <div className="flex h-dvh flex-col">
+      {/* The viewport never scrolls: only <main> (and the sidebar nav) scroll inside this fixed frame. */}
+      <div className="flex h-dvh w-full flex-col overflow-hidden">
         <Navbar onOpenMobileNav={() => setMobileOpen(true)} />
 
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           <Sidebar
             collapsed={collapsed}
             onToggleCollapsed={() => setCollapsed((c) => !c)}
@@ -61,12 +60,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main
             id="main-content"
             tabIndex={-1}
-            className="min-w-0 flex-1 overflow-y-auto focus:outline-none"
+            className="relative h-full min-w-0 flex-1 overflow-y-auto overscroll-contain focus:outline-none"
           >
             {children}
           </main>
         </div>
       </div>
+
+      <FlashTraceModal />
     </MotionConfig>
   );
 }
